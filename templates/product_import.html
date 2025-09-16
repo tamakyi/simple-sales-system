@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}批量导入商品{% endblock %}
+{% block content %}
+<h3>批量导入商品</h3>
+<p>请上传CSV文件，列名：商品名、单价、库存、分类</p>
+<form method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.file.label }} {{ form.file(class="form-control-file") }}
+    </div>
+    <button class="btn btn-success">{{ form.submit.label }}</button>
+</form>
+{% endblock %}

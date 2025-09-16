@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}用户管理{% endblock %}
+{% block content %}
+<h3>用户管理</h3>
+<table class="table table-bordered">
+    <tr>
+        <th>ID</th><th>用户名</th><th>管理员</th><th>激活</th><th>操作</th>
+    </tr>
+    {% for u in users %}
+    <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.username }}</td>
+        <td>{% if u.is_admin %}是{% else %}否{% endif %}</td>
+        <td>{% if u.is_active %}是{% else %}否{% endif %}</td>
+        <td>
+            <a href="{{ url_for('user_approve', uid=u.id) }}" class="btn btn-sm btn-primary">审核/编辑</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

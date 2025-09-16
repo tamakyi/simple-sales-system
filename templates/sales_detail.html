@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}商品销售详情{% endblock %}
+{% block content %}
+<h3>{{ prod.name }} 销售流水</h3>
+<table class="table table-bordered">
+    <tr><th>数量</th><th>金额</th><th>操作人</th><th>时间</th></tr>
+    {% for s in sales %}
+    <tr>
+        <td>{{ s.quantity }}</td>
+        <td>{{ s.amount }}</td>
+        <td>{{ s.user.username }}</td>
+        <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

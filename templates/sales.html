@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}进销存{% endblock %}
+{% block content %}
+<h3>进销存</h3>
+<table class="table table-bordered">
+    <tr>
+        <th>图片</th><th>商品</th><th>分类</th><th>库存</th>
+        <th>历史销售额</th><th>今日销售额</th><th>历史销量</th>
+        <th>操作</th><th>详情</th>
+    </tr>
+    {% for p in products.items %}
+    <tr>
+        <td>
+            {% if p.image %}
+                {% if p.image.startswith('http') %}
+                    <img src="{{ p.image }}" width="40" class="img-thumb" onclick="window.open('{{ p.image }}')">
+                {% else %}
+                    <img src="{{ url_for('static', filename=p.image) }}" width="40" class="img-thumb" onclick="window.open('{{ url_for('static', filename=p.image) }}')">
+                {% endif %}
+            {% endif %}
+        </td>
+        <td>{{ p.name }}</td>
+        <td>{{ p.category.name }}</td>
+        <td>{{ p.stock }}</td>
+        <td>{{ stat_map[p.id].all_sale }}</td>
+        <td>{{ stat_map[p.id].today_sale }}</td>
+        <td>{{ stat_map[p.id].all_qty }}</td>
+        <td>
+            <form method="post" action="{{ url_for('sales_operate', pid=p.id) }}" style="display:inline;">
+                <input type="number" name="quantity" min="1" class="form-control d-inline w-50" required>
+                <button type="submit" name="submit_in" class="btn btn-success btn-sm">进货</button>
+                <button type="submit" name="submit_out" class="btn btn-danger btn-sm">销售</button>
+            </form>
+        </td>
+        <td>
+            <a href="{{ url_for('sales_detail', pid=p.id) }}" target="_blank">流水</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<nav>
+  <ul class="pagination">
+    {% if products.has_prev %}
+      <li class="page-item"><a class="page-link" href="?page={{ products.prev_num }}">&laquo;</a></li>
+    {% endif %}
+    {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+      {% if page_num %}
+        <li class="page-item {% if products.page == page_num %}active{% endif %}"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+    {% endfor %}
+    {% if products.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{ products.next_num }}">&raquo;</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endblock %}

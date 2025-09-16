@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}编辑商品{% endblock %}
+{% block content %}
+<h3>编辑商品</h3>
+<form method="post" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div class="form-row">
+        <div class="col">{{ form.name.label }} {{ form.name(class="form-control") }}</div>
+        <div class="col">{{ form.price.label }} {{ form.price(class="form-control") }}</div>
+        <div class="col">{{ form.stock.label }} {{ form.stock(class="form-control") }}</div>
+        <div class="col">{{ form.category.label }} {{ form.category(class="form-control") }}</div>
+        <div class="col">{{ form.image_link.label }} {{ form.image_link(class="form-control") }}</div>
+        <div class="col">{{ form.image.label }} {{ form.image(class="form-control-file") }}</div>
+        <div class="col"><button class="btn btn-success mt-4">{{ form.submit.label }}</button></div>
+    </div>
+    <small class="text-muted">图片链接和上传图片任选其一，均可为空</small>
+</form>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block title %}审核/编辑用户{% endblock %}
+{% block content %}
+<h3>审核/编辑用户：{{ user.username }}</h3>
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="form-check">
+        {{ form.is_active(class="form-check-input") }}
+        {{ form.is_active.label(class="form-check-label") }}
+    </div>
+    <div class="form-check">
+        {{ form.is_admin(class="form-check-input") }}
+        {{ form.is_admin.label(class="form-check-label") }}
+    </div>
+    <button class="btn btn-success">{{ form.submit.label }}</button>
+</form>
+{% endblock %}

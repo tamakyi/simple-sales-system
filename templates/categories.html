@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}分类管理{% endblock %}
+{% block content %}
+<h3>分类管理</h3>
+<form method="post" class="form-inline mb-3">
+    {{ form.hidden_tag() }}
+    <div class="form-group mr-2">
+        {{ form.name.label }} {{ form.name(class="form-control") }}
+    </div>
+    <button class="btn btn-success">{{ form.submit.label }}</button>
+</form>
+<table class="table table-bordered">
+    <tr><th>分类名</th><th>操作</th></tr>
+    {% for c in categories %}
+    <tr>
+        <td>{{ c.name }}</td>
+        <td>
+            <a href="{{ url_for('delete_category', cat_id=c.id) }}" class="btn btn-danger btn-sm"
+               onclick="return confirm('确定删除该分类？')">删除</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
