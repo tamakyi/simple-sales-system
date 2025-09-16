@@ -294,12 +294,26 @@ def user_approve(uid):
     check_admin()
     user = User.query.get_or_404(uid)
     form = UserApproveForm(obj=user)
+    
     if form.validate_on_submit():
+        # 处理密码修改
+        if form.old_password.data:
+            if not check_password_hash(user.password, form.old_password.data):
+                flash('当前密码错误', 'error')
+                return render_template('user_approve.html', form=form, user=user)
+            
+            # 更新密码
+            user.password = generate_password_hash(form.new_password.data)
+            db.session.commit()
+            flash('密码已成功更新', 'success')
+        
+        # 保留原有功能
         user.is_active = form.is_active.data
         user.is_admin = form.is_admin.data
         db.session.commit()
-        flash("保存成功")
+        flash('用户信息已保存', 'success')
         return redirect(url_for('users'))
+    
     return render_template('user_approve.html', form=form, user=user)
 
 @app.route('/logs')

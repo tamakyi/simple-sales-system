@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, SelectField, FileField, BooleanField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional
+from wtforms.validators import DataRequired, Length, NumberRange, Optional, EqualTo
 from flask_wtf.file import FileAllowed
 
 class LoginForm(FlaskForm):
@@ -44,4 +44,11 @@ class CategoryForm(FlaskForm):
 class UserApproveForm(FlaskForm):
     is_active = BooleanField('激活')
     is_admin = BooleanField('管理员')
+    submit = SubmitField('保存')
+    old_password = PasswordField('当前密码', validators=[Optional()])
+    new_password = PasswordField('新密码', validators=[
+        Length(min=6, message='密码至少6位'),
+        EqualTo('confirm_password', message='两次密码不一致')
+    ])
+    confirm_password = PasswordField('确认新密码')
     submit = SubmitField('保存')
