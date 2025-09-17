@@ -2,16 +2,65 @@
 {% block title %}操作日志{% endblock %}
 {% block content %}
 <h3>操作日志（最近100条）</h3>
-<table class="table table-bordered">
-    <tr>
-        <th>操作者</th><th>行为</th><th>时间</th>
-    </tr>
-    {% for log in logs %}
-    <tr>
-        <td>{{ log.user.username }}</td>
-        <td>{{ log.action }}</td>
-        <td>{{ log.ts.strftime('%Y-%m-%d %H:%M') }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead class="d-none d-md-table-header-group">
+            <tr>
+                <th>操作者</th>
+                <th>行为</th>
+                <th>时间</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td data-label="操作者">{{ log.user.username }}</td>
+                <td data-label="行为">{{ log.action }}</td>
+                <td data-label="时间">{{ log.ts.strftime('%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+/* 移动端表格样式 */
+@media (max-width: 767.98px) {
+    .table-responsive table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table-responsive thead {
+        display: none;
+    }
+    
+    .table-responsive tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+    }
+    
+    .table-responsive td {
+        display: block;
+        text-align: right;
+        padding: 0.75rem;
+        position: relative;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .table-responsive td:last-child {
+        border-bottom: 0;
+    }
+    
+    .table-responsive td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.75rem;
+        font-weight: bold;
+        text-align: left;
+    }
+}
+</style>
 {% endblock %}

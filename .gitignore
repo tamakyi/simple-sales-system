@@ -1,2 +1,3 @@
 # Dependency directories (remove the comment below to include it)
 static/uploads
+.env

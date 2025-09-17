@@ -1,5 +1,286 @@
-.img-thumb { cursor: pointer; border-radius: 3px; border: 1px solid #ddd; }
-.table { font-size: 15px; }
-body { background: #f7f7f7; }
-.alert-info { margin-top: 10px; }
-.form-check { margin-bottom: 1.5rem; }
+/* 背景图片样式 */
+body.background-image {
+    position: relative;
+    min-height: 100vh;
+}
+
+body.background-image::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--bg-image);
+    background-size: var(--bg-size);
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: var(--bg-opacity);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* 确保内容区域在背景之上 */
+.container {
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 20px;
+}
+
+/* 卡片样式增强 */
+.card {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+/* 表格样式增强 */
+.table {
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* 导航栏样式增强 */
+.navbar {
+    background-color: rgba(248, 249, 250, 0.95) !important;
+    backdrop-filter: blur(10px);
+}
+
+/* 登录和注册页面特殊处理 */
+body.background-image .card {
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+}
+
+/* 移动端优化样式 */
+.img-thumb { 
+    cursor: pointer; 
+    border-radius: 3px; 
+    border: 1px solid #ddd; 
+    max-width: 100%;
+    height: auto;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table { 
+    font-size: 14px; 
+    min-width: 600px;
+}
+
+body { 
+    background: #f7f7f7; 
+    font-size: 14px;
+}
+
+.alert { 
+    margin-top: 10px; 
+}
+
+.form-check { 
+    margin-bottom: 1rem; 
+}
+
+.form-control.mx-2 { 
+    min-width: 150px; 
+}
+
+/* 移动端按钮优化 */
+.btn {
+    font-size: 14px;
+    padding: 0.375rem 0.75rem;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 12px;
+}
+
+/* 移动端表单优化 */
+.form-control, .form-select {
+    font-size: 14px;
+}
+
+/* 移动端卡片优化 */
+.card {
+    margin-bottom: 1rem;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+/* 移动端导航优化 */
+.navbar-brand {
+    font-size: 1.1rem;
+}
+
+.navbar-nav .nav-link {
+    padding: 0.5rem 0.8rem;
+}
+
+/* 移动端表格操作列优化 */
+.table-actions {
+    white-space: nowrap;
+}
+
+/* 移动端分页优化 */
+.pagination {
+    flex-wrap: wrap;
+}
+
+/* 移动端仪表盘卡片优化 */
+.dashboard-card {
+    margin-bottom: 1rem;
+}
+
+/* 移动端表单行优化 */
+.form-row {
+    margin-bottom: 0.5rem;
+}
+
+/* 移动端图片预览优化 */
+.img-preview {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 移动端隐藏某些元素 */
+.mobile-hidden {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .mobile-hidden {
+        display: table-cell;
+    }
+    
+    .table {
+        font-size: 15px;
+        min-width: auto;
+    }
+    
+    body {
+        font-size: 16px;
+    }
+    
+    .btn {
+        font-size: 16px;
+    }
+}
+
+/* 移动端分类卡片优化 */
+.category-card .card-header {
+    padding: 0.5rem 1rem;
+}
+
+.category-card .table {
+    margin-bottom: 0;
+}
+
+/* 移动端销售操作表单优化 */
+.sales-operate-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.sales-operate-form input {
+    max-width: 80px;
+}
+
+/* 移动端商品图片优化 */
+.product-image {
+    max-width: 60px;
+    height: auto;
+}
+/* 销售操作表单优化 */
+.sales-operate-form .input-group {
+  flex-wrap: nowrap;
+  min-width: 200px;
+}
+
+.sales-operate-form .form-control {
+  max-width: 80px;
+  min-width: 60px;
+}
+
+.sales-operate-form .btn {
+  white-space: nowrap;
+  padding: 0.25rem 0.5rem;
+  font-size: 12px;
+}
+
+/* 移动端优化 */
+@media (max-width: 576px) {
+  .sales-operate-form .input-group {
+    flex-direction: column;
+    min-width: auto;
+  }
+  
+  .sales-operate-form .form-control {
+    max-width: 100%;
+    margin-bottom: 0.25rem;
+  }
+  
+  .sales-operate-form .btn {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+  
+  .sales-operate-form .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* 日志表格工具提示样式 */
+[data-bs-toggle="tooltip"] {
+    cursor: help;
+    border-bottom: 1px dotted #999;
+}
+
+/* 移动端表格样式 */
+@media (max-width: 767.98px) {
+    .table-responsive table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table-responsive thead {
+        display: none;
+    }
+    
+    .table-responsive tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+    }
+    
+    .table-responsive td {
+        display: block;
+        text-align: right;
+        padding: 0.75rem;
+        position: relative;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .table-responsive td:last-child {
+        border-bottom: 0;
+    }
+    
+    .table-responsive td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0.75rem;
+        font-weight: bold;
+        text-align: left;
+    }
+}

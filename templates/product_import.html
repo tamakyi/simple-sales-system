@@ -1,13 +1,127 @@
 {% extends 'base.html' %}
-{% block title %}批量导入商品{% endblock %}
+{% block title %}商品导入{% endblock %}
 {% block content %}
-<h3>批量导入商品</h3>
-<p>请上传CSV文件，列名：商品名、单价、库存、分类</p>
-<form method="post" enctype="multipart/form-data">
-    {{ form.hidden_tag() }}
-    <div class="form-group">
-        {{ form.file.label }} {{ form.file(class="form-control-file") }}
+<div class="row">
+    <div class="col-12 col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">批量导入商品 (CSV)</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">请上传CSV文件，列名：商品名、单价、库存、分类</p>
+                <div class="mb-3">
+                    <a href="{{ url_for('download_import_template') }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-download"></i> 下载CSV模板
+                    </a>
+                </div>
+                <form method="post" enctype="multipart/form-data">
+                    {{ csv_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ csv_form.file.label }} 
+                        {{ csv_form.file(class="form-control") }}
+                    </div>
+                    <button name="submit" value="csv" class="btn btn-success w-100">{{ csv_form.submit.label }}</button>
+                </form>
+            </div>
+        </div>
     </div>
-    <button class="btn btn-success">{{ form.submit.label }}</button>
-</form>
+    
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">手动添加商品</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {{ manual_form.hidden_tag() }}
+                    <div class="row g-3">
+                        <div class="col-12">
+                            {{ manual_form.name.label }} 
+                            {{ manual_form.name(class="form-control") }}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ manual_form.price.label }} 
+                            {{ manual_form.price(class="form-control") }}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ manual_form.stock.label }} 
+                            {{ manual_form.stock(class="form-control") }}
+                        </div>
+                        <div class="col-12">
+                            {{ manual_form.category.label }} 
+                            {{ manual_form.category(class="form-select") }}
+                        </div>
+                        <div class="col-12">
+                            {{ manual_form.image_link.label }} 
+                            {{ manual_form.image_link(class="form-control", placeholder="可选") }}
+                        </div>
+                        <div class="col-12">
+                            {{ manual_form.image.label }} 
+                            {{ manual_form.image(class="form-control") }}
+                        </div>
+                        <div class="col-12">
+                            <button name="submit" value="manual" class="btn btn-primary w-100">{{ manual_form.submit.label }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加一些样式改进 -->
+<style>
+.card {
+    margin-bottom: 1rem;
+}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 表单验证
+    const manualForm = document.querySelector('form');
+    if (manualForm) {
+        manualForm.addEventListener('submit', function(e) {
+            const name = document.getElementById('{{ manual_form.name.id }}').value;
+            const price = document.getElementById('{{ manual_form.price.id }}').value;
+            const stock = document.getElementById('{{ manual_form.stock.id }}').value;
+            
+            if (!name || !price || !stock) {
+                e.preventDefault();
+                alert('请填写必填字段：商品名、单价和库存');
+                return false;
+            }
+            
+            if (price <= 0) {
+                e.preventDefault();
+                alert('单价必须大于0');
+                return false;
+            }
+            
+            if (stock < 0) {
+                e.preventDefault();
+                alert('库存不能为负数');
+                return false;
+            }
+        });
+    }
+    
+    // 图片和图片链接互斥选择
+    const imageLink = document.getElementById('{{ manual_form.image_link.id }}');
+    const imageFile = document.getElementById('{{ manual_form.image.id }}');
+    
+    if (imageLink && imageFile) {
+        imageLink.addEventListener('input', function() {
+            if (this.value) {
+                imageFile.value = '';
+            }
+        });
+        
+        imageFile.addEventListener('change', function() {
+            if (this.value) {
+                imageLink.value = '';
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

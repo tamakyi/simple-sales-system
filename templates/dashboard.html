@@ -1,76 +1,162 @@
 {% extends 'base.html' %}
-{% block title %}仪表盘{% endblock %}
+{% block title %}
+    {% if selected_date == datetime.date.today() %}
+        今日仪表盘
+    {% else %}
+        {{ selected_date|dateformat('%Y-%m-%d') }}仪表盘
+    {% endif %}
+{% endblock %}
 {% block head %}
-<!--<script src="{{ url_for('static', filename='echarts.min.js') }}"></script>-->
 <script src="https://cdnjs.snrat.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
 {% endblock %}
 {% block content %}
-<div class="row mb-4">
-    <div class="col">
-        <div class="card text-white bg-info mb-3">
+<!-- 日期选择器 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
             <div class="card-body">
-                <h5 class="card-title">今日销售额</h5>
-                <p class="card-text">{{ today_total }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-white bg-secondary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">昨日销售额</h5>
-                <p class="card-text">{{ yesterday_total }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title">历史总销售额</h5>
-                <p class="card-text">{{ all_total }}</p>
+                <h5 class="card-title">选择日期查看销售情况</h5>
+                <form method="get" class="row g-3 align-items-center">
+                    <div class="col-12 col-md-4">
+                        <input type="date" name="date" class="form-control" 
+                               value="{{ selected_date|dateformat('%Y-%m-%d') }}"
+                               max="{{ datetime.date.today()|dateformat('%Y-%m-%d') }}">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <button type="submit" class="btn btn-primary w-100">查询</button>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <a href="{{ url_for('dashboard', date=prev_date|dateformat('%Y-%m-%d')) }}" 
+                           class="btn btn-outline-secondary w-100">前一天</a>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-info w-100">今天</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div id="cat-sale-pie" style="width:100%;height:300px;"></div>
+<div class="row mb-3">
+    <div class="col-12 col-md-4 dashboard-card">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    {% if selected_date == datetime.date.today() %}
+                        今日销售额
+                    {% else %}
+                        {{ selected_date|dateformat('%Y-%m-%d') }}销售额
+                    {% endif %}
+                </h5>
+                <p class="card-text fs-4">{{ selected_date_total }}</p>
+            </div>
+        </div>
     </div>
-    <div class="col-md-6">
-        <h5>销售排行榜（销售额）</h5>
-        <table class="table table-sm">
-            <tr><th>商品</th><th>总销售额</th><th>总销量</th></tr>
-            {% for item in sale_ranks %}
-            <tr>
-                <td>{{ item[0] }}</td>
-                <td>{{ item[1] }}</td>
-                <td>{{ item[2] }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+    <div class="col-12 col-md-4 dashboard-card">
+        <div class="card text-white bg-secondary">
+            <div class="card-body text-center">
+                <h5 class="card-title">昨日销售额</h5>
+                <p class="card-text fs-4">{{ yesterday_total }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4 dashboard-card">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h5 class="card-title">历史总销售额</h5>
+                <p class="card-text fs-4">{{ all_total }}</p>
+            </div>
+        </div>
     </div>
 </div>
-<hr>
-<h5>最近20条销售流水</h5>
-<table class="table table-bordered">
-    <tr>
-        <th>商品</th><th>数量</th><th>金额</th><th>时间</th>
-    </tr>
-    {% for s in sales %}
-    <tr>
-        <td>{{ s.product.name }}</td>
-        <td>{{ s.quantity }}</td>
-        <td>{{ s.amount }}</td>
-        <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-    </tr>
-    {% endfor %}
-</table>
+
+<div class="row mb-3">
+    <div class="col-12 col-lg-6 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    {% if selected_date == datetime.date.today() %}
+                        今日分类销售额占比
+                    {% else %}
+                        {{ selected_date|dateformat('%Y-%m-%d') }}分类销售额占比
+                    {% endif %}
+                </h5>
+                <div id="cat-sale-pie" style="width:100%;height:300px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    {% if selected_date == datetime.date.today() %}
+                        今日销售排行榜（销售额）
+                    {% else %}
+                        {{ selected_date|dateformat('%Y-%m-%d') }}销售排行榜（销售额）
+                    {% endif %}
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr><th>商品</th><th>总销售额</th><th class="mobile-hidden">总销量</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for item in sale_ranks %}
+                            <tr>
+                                <td>{{ item[0] }}</td>
+                                <td>{{ item[1] }}</td>
+                                <td class="mobile-hidden">{{ item[2] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">
+            {% if selected_date == datetime.date.today() %}
+                今日最近20条销售流水
+            {% else %}
+                {{ selected_date|dateformat('%Y-%m-%d') }}销售流水
+            {% endif %}
+        </h5>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>商品</th>
+                        <th>数量</th>
+                        <th class="mobile-hidden">金额</th>
+                        <th>时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sales %}
+                    <tr>
+                        <td>{{ s.product.name }}</td>
+                        <td>{{ s.quantity }}</td>
+                        <td class="mobile-hidden">{{ s.amount }}</td>
+                        <td>{{ s.created_at.strftime('%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script>
 var myChart = echarts.init(document.getElementById('cat-sale-pie'));
 var option = {
-    title: {text: '分类销售额占比', left: 'center'},
+    title: {text: '分类销售额占比', left: 'center', textStyle: {fontSize: 14}},
     tooltip: {trigger: 'item'},
-    legend: {orient: 'vertical', left: 'left'},
+    legend: {orient: 'horizontal', bottom: 0, textStyle: {fontSize: 12}},
     series: [{
         name: '销售额',
         type: 'pie',
@@ -83,5 +169,10 @@ var option = {
     }]
 };
 myChart.setOption(option);
+
+// 响应式调整图表
+window.addEventListener('resize', function() {
+    myChart.resize();
+});
 </script>
 {% endblock %}

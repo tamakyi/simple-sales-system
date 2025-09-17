@@ -2,20 +2,53 @@
 {% block title %}用户管理{% endblock %}
 {% block content %}
 <h3>用户管理</h3>
-<table class="table table-bordered">
-    <tr>
-        <th>ID</th><th>用户名</th><th>管理员</th><th>激活</th><th>操作</th>
-    </tr>
-    {% for u in users %}
-    <tr>
-        <td>{{ u.id }}</td>
-        <td>{{ u.username }}</td>
-        <td>{% if u.is_admin %}是{% else %}否{% endif %}</td>
-        <td>{% if u.is_active %}是{% else %}否{% endif %}</td>
-        <td>
-            <a href="{{ url_for('user_approve', uid=u.id) }}" class="btn btn-sm btn-primary">审核/编辑</a>
-        </td>
-    </tr>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
     {% endfor %}
-</table>
+  {% endif %}
+{% endwith %}
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>用户名</th>
+                <th>管理员</th>
+                <th>激活</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>{{ u.id }}</td>
+                <td>{{ u.username }}</td>
+                <td>{% if u.is_admin %}是{% else %}否{% endif %}</td>
+                <td>{% if u.is_active %}是{% else %}否{% endif %}</td>
+                <td class="table-actions">
+                    <a href="{{ url_for('user_approve', uid=u.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                    
+                    {# 删除按钮 - 使用表单提交POST请求 #}
+                    {% if u.id != current_user.id %}
+                    <form action="{{ url_for('delete_user', uid=u.id) }}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" 
+                                onclick="return confirm('确定要删除用户 {{ u.username }} 吗？此操作不可恢复。')">
+                            删除
+                        </button>
+                    </form>
+                    {% else %}
+                    <button class="btn btn-sm btn-secondary" disabled title="不能删除自己的账户">删除</button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

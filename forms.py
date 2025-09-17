@@ -19,8 +19,17 @@ class ProductForm(FlaskForm):
     stock = IntegerField('库存', validators=[DataRequired(), NumberRange(min=0)])
     category = SelectField('分类', coerce=int)
     image_link = StringField('图片链接', validators=[Optional()])
-    image = FileField('或上传图片', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg'])])
+    image = FileField('或上传图片', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg', 'webp'])])
     submit = SubmitField('保存')
+
+class ManualProductForm(FlaskForm):
+    name = StringField('商品名', validators=[DataRequired()])
+    price = FloatField('单价', validators=[DataRequired(), NumberRange(min=0)])
+    stock = IntegerField('库存', validators=[DataRequired(), NumberRange(min=0)])
+    category = SelectField('分类', coerce=int)
+    image_link = StringField('图片链接', validators=[Optional()])
+    image = FileField('或上传图片', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg', 'webp'])])
+    submit = SubmitField('添加商品')
 
 class ProductImportForm(FlaskForm):
     file = FileField('CSV文件', validators=[DataRequired(), FileAllowed(['csv'])])
@@ -45,6 +54,7 @@ class UserApproveForm(FlaskForm):
     is_active = BooleanField('激活')
     is_admin = BooleanField('管理员')
     submit = SubmitField('保存')
+    username = StringField('用户名', validators=[DataRequired(), Length(min=3, max=50, message='用户名长度必须在3到50个字符之间')])
     old_password = PasswordField('当前密码', validators=[Optional()])
     new_password = PasswordField('新密码', validators=[
         Length(min=6, message='密码至少6位'),

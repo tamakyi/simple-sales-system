@@ -11,7 +11,6 @@
       <table class="table table-bordered mb-0">
         <thead>
           <tr>
-            <th class="product-image-col">图片</th>
             <th>商品</th>
             <th>库存</th>
             <th class="mobile-hidden">历史销售额</th>
@@ -24,19 +23,6 @@
         <tbody>
           {% for p in items %}
           <tr>
-            <td class="product-image-cell">
-              {% if p.image %}
-                {% if p.image.startswith('http') %}
-                  <img src="{{ p.image }}" class="product-thumbnail" alt="{{ p.name }}">
-                {% else %}
-                  <img src="{{ url_for('static', filename=p.image) }}" class="product-thumbnail" alt="{{ p.name }}">
-                {% endif %}
-              {% else %}
-                <div class="no-image-placeholder">
-                  <span>无图片</span>
-                </div>
-              {% endif %}
-            </td>
             <td>{{ p.name }}</td>
             <td>{{ p.stock }}</td>
             <td class="mobile-hidden">{{ stat_map[p.id].all_sale }}</td>
@@ -73,74 +59,4 @@
     {% endif %}
   </ul>
 </nav>
-
-<style>
-  /* 商品图片样式 */
-  .product-thumbnail {
-    width: 50px;
-    height: 50px;
-    object-fit: cover;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-  }
-  
-  .no-image-placeholder {
-    width: 50px;
-    height: 50px;
-    background-color: #f8f9fa;
-    border: 1px dashed #dee2e6;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    color: #6c757d;
-    text-align: center;
-  }
-  
-  /* 移动端优化 */
-  @media (max-width: 768px) {
-    .product-image-col {
-      width: 60px;
-    }
-    
-    .product-thumbnail {
-      width: 40px;
-      height: 40px;
-    }
-    
-    .no-image-placeholder {
-      width: 40px;
-      height: 40px;
-      font-size: 9px;
-    }
-    
-    /* 在移动端隐藏图片列标题 */
-    .product-image-col {
-      font-size: 0;
-    }
-    
-    .product-image-col::before {
-      content: "图片";
-      font-size: 14px;
-    }
-  }
-  
-  @media (max-width: 576px) {
-    .product-thumbnail {
-      width: 35px;
-      height: 35px;
-    }
-    
-    .no-image-placeholder {
-      width: 35px;
-      height: 35px;
-    }
-    
-    /* 进一步压缩表格间距 */
-    .table td, .table th {
-      padding: 0.4rem;
-    }
-  }
-</style>
 {% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}操作日志{% endblock %}
+{% block content %}
+<h3>操作日志（最近100条）</h3>
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>操作者</th>
+                <th class="mobile-hidden">行为</th>
+                <th>时间</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.user.username }}</td>
+                <td class="mobile-hidden">{{ log.action }}</td>
+                <td>{{ log.ts.strftime('%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

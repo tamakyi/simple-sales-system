@@ -1,40 +1,70 @@
 {% extends 'base.html' %}
 {% block title %}审核/编辑用户{% endblock %}
 {% block content %}
-<h3>审核/编辑用户：{{ user.username }}</h3>
-<form method="post">
-    {{ form.hidden_tag() }}
-    <div class="form-check">
-        {{ form.is_active(class="form-check-input") }}
-        {{ form.is_active.label(class="form-check-label") }}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">审核/编辑用户：{{ user.username }}</h3>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="{{ form.username.id }}" class="form-label">用户名</label>
+                        {{ form.username(class="form-control") }}
+                        {% for error in form.username.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            {{ form.is_admin(class="form-check-input") }}
+                            {{ form.is_admin.label(class="form-check-label") }}
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">修改密码</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="{{ form.old_password.id }}" class="form-label">当前密码</label>
+                                {{ form.old_password(class="form-control") }}
+                                {% for error in form.old_password.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.new_password.id }}" class="form-label">新密码</label>
+                                {{ form.new_password(class="form-control") }}
+                                {% for error in form.new_password.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.confirm_password.id }}" class="form-label">确认新密码</label>
+                                {{ form.confirm_password(class="form-control") }}
+                                {% for error in form.confirm_password.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-success w-100">{{ form.submit.label }}</button>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="form-check">
-        {{ form.is_admin(class="form-check-input") }}
-        {{ form.is_admin.label(class="form-check-label") }}
-    </div>
-    <div class="mb-3">
-        <label for="{{ form.old_password.id }}" class="form-label">当前密码</label>
-        {{ form.old_password(class="form-control") }}
-        {% for error in form.old_password.errors %}
-            <div class="text-danger">{{ error }}</div>
-        {% endfor %}
-    </div>    
-
-    <div class="mb-3">
-        <label for="{{ form.new_password.id }}" class="form-label">新密码</label>
-        {{ form.new_password(class="form-control") }}
-        {% for error in form.new_password.errors %}
-            <div class="text-danger">{{ error }}</div>
-        {% endfor %}
-    </div>    
-
-    <div class="mb-3">
-        <label for="{{ form.confirm_password.id }}" class="form-label">确认新密码</label>
-        {{ form.confirm_password(class="form-control") }}
-        {% for error in form.confirm_password.errors %}
-            <div class="text-danger">{{ error }}</div>
-        {% endfor %}
-    </div>
-    <button class="btn btn-success">{{ form.submit.label }}</button>
-</form>
+</div>
 {% endblock %}
