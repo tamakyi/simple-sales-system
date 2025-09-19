@@ -27,11 +27,11 @@
         <tbody>
             {% for u in users %}
             <tr>
-                <td>{{ u.id }}</td>
-                <td>{{ u.username }}</td>
-                <td>{% if u.is_admin %}是{% else %}否{% endif %}</td>
-                <td>{% if u.is_active %}是{% else %}否{% endif %}</td>
-                <td class="table-actions">
+                <td data-label="ID">{{ u.id }}</td>
+                <td data-label="用户名">{{ u.username }}</td>
+                <td data-label="管理员">{% if u.is_admin %}是{% else %}否{% endif %}</td>
+                <td data-label="激活">{% if u.is_active %}是{% else %}否{% endif %}</td>
+                <td class="table-actions" data-label="操作">
                     <a href="{{ url_for('user_approve', uid=u.id) }}" class="btn btn-sm btn-primary">编辑</a>
                     
                     {# 删除按钮 - 使用表单提交POST请求 #}

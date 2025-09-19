@@ -33,6 +33,10 @@ app.config['BACKGROUND_SIZE'] = os.getenv('BACKGROUND_SIZE', 'cover')
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 2097152))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PER_PAGE'] = int(os.getenv('PER_PAGE', 10))
+app.config['DASHBOARD_ANNOUNCEMENT'] = os.getenv('DASHBOARD_ANNOUNCEMENT', '')
+app.config['ANNOUNCEMENT_ENABLED'] = os.getenv('ANNOUNCEMENT_ENABLED', 'False').lower() == 'true'
+app.config['ANALYZE_SCRIPT'] = os.getenv('ANALYZE_SCRIPT', '')
+app.config['ANALYZE_ENABLE'] = os.getenv('ANALYZE_ENABLE', 'False').lower() == 'true'
 
 db.init_app(app)
 login_manager = LoginManager(app)
@@ -83,7 +87,11 @@ def inject_background_config():
     return {
         'background_image_url': app.config['BACKGROUND_IMAGE_URL'],
         'background_opacity': app.config['BACKGROUND_OPACITY'],
-        'background_size': app.config['BACKGROUND_SIZE']
+        'background_size': app.config['BACKGROUND_SIZE'],
+        'announcement': app.config['DASHBOARD_ANNOUNCEMENT'],
+        'announcement_enabled': app.config['ANNOUNCEMENT_ENABLED'],
+        'analyzer_script': app.config['ANALYZE_SCRIPT'],
+        'analyze_enable': app.config['ANALYZE_ENABLE']
     }
 
 # 添加日期格式化过滤器

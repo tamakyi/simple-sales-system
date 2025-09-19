@@ -112,9 +112,9 @@
                         <tbody>
                             {% for item in sale_ranks %}
                             <tr>
-                                <td>{{ item[0] }}</td>
-                                <td>{{ item[1]|round(2) }}</td>
-                                <td class="mobile-hidden">{{ item[2] }}</td>
+                                <td data-label="商品">{{ item[0] }}</td>
+                                <td data-label="总销售额">{{ item[1]|round(2) }}</td>
+                                <td class="mobile-hidden" data-label="总销量">{{ item[2] }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -147,10 +147,10 @@
                 <tbody>
                     {% for s in sales %}
                     <tr>
-                        <td>{{ s.product.name }}</td>
-                        <td>{{ s.quantity }}</td>
-                        <td class="mobile-hidden">{{ s.amount|round(2) }}</td>
-                        <td>{{ s.created_at.strftime('%m-%d %H:%M') }}</td>
+                        <td data-label="商品">{{ s.product.name }}</td>
+                        <td data-label="数量">{{ s.quantity }}</td>
+                        <td class="mobile-hidden" data-label="金额">{{ s.amount|round(2) }}</td>
+                        <td  data-label="时间">{{ s.created_at.strftime('%m-%d %H:%M') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -42,6 +42,8 @@ app.config['SQLALCHEMY_POOL_RECYCLE'] = 280  # 避免 MySQL 連接超時
 app.config['SQLALCHEMY_POOL_SIZE'] = 20      # 連接池大小
 app.config['DASHBOARD_ANNOUNCEMENT'] = os.getenv('DASHBOARD_ANNOUNCEMENT', '')
 app.config['ANNOUNCEMENT_ENABLED'] = os.getenv('ANNOUNCEMENT_ENABLED', 'False').lower() == 'true'
+app.config['ANALYZE_SCRIPT'] = os.getenv('ANALYZE_SCRIPT', '')
+app.config['ANALYZE_ENABLE'] = os.getenv('ANALYZE_ENABLE', 'False').lower() == 'true'
 
 db.init_app(app)
 login_manager = LoginManager(app)
@@ -141,7 +143,9 @@ def inject_background_config():
         'background_opacity': app.config['BACKGROUND_OPACITY'],
         'background_size': app.config['BACKGROUND_SIZE'],
         'announcement': app.config['DASHBOARD_ANNOUNCEMENT'],
-        'announcement_enabled': app.config['ANNOUNCEMENT_ENABLED']
+        'announcement_enabled': app.config['ANNOUNCEMENT_ENABLED'],
+        'analyzer_script': app.config['ANALYZE_SCRIPT'],
+        'analyze_enable': app.config['ANALYZE_ENABLE']
     }
 
 # 添加日期格式化过滤器
