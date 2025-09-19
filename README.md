@@ -1,6 +1,14 @@
 # 基于Python的简单网页端进销存/销售管理系统
 
 ## 截图
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/dashboard.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products-import.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/sales.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/categroies.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/users.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/logs.png)
+
 
 
 ## 简介
