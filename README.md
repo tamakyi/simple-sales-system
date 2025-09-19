@@ -1,12 +1,21 @@
 # 基于Python的简单网页端进销存/销售管理系统
 
 ## 截图
+ - 主界面
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/dashboard.png)
+ - 商品管理
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products.png)
+ - 商品导入
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products-import.png)
+ - 进销存
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/sales.png)
+ - 针对移动端优化的进销存
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/sales-simple.png)
+ - 商品分类
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/categories.png)
+ - 用户管理
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/users.png)
+ - 操作记录
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/logs.png)
 
 
@@ -21,17 +30,17 @@
 
 - 商品管理（增删改查，支持图片、批量导入）
 - 分类管理
-- 进销存：商品表格展示，直接在行内录入进货/销售
+- 进销存：商品表格展示，直接在行内录入进货/销售（针对移动端单独做优化）
 - 销售流水、历史/今日销售、库存统计
 - 销售排行榜、分类饼图、销售数据卡片
 - 用户权限（管理员/普通用户/审核）
 - 操作日志
 - 导出销售报表（Excel）
 - 支持分页、搜索、图片外链或本地上传
-- 使用sql轻量化运行，不依赖mysql（可选）
+- 可选使用sql轻量化存储数据或使用mysql存储
 - 网页公告
 - 背景图片
-
+- 网页跟踪脚本
 ---
 
 ## 快速开始
@@ -55,6 +64,8 @@ BACKGROUND_OPACITY=0.1 # 背景图片不透明度，范围0-1，越接近0越透
 BACKGROUND_SIZE=cover #背景图片尺寸，默认cover即可，详情查看web css中关于background_size的参数说明。
 DASHBOARD_ANNOUNCEMENT="请注意：系统将于本周五晚进行维护，届时可能无法访问。"
 ANNOUNCEMENT_ENABLED=True  # 控制公告是否显示
+ANALYZE_SCRIPT="" #分析脚本，建议使用umami
+ANALYZE_ENABLE=True #开启分析脚本功能
 ```
 
 ### 2. 启动项目
@@ -82,6 +93,7 @@ python app-sqlite.py #使用sqlite存储数据
 - 商品名、单价、库存、分类
 
 示例见 `sample_products.csv`。
+网页内支持直接导出模板文件，修改好导入即可实现批量导入。
 
 ---
 
@@ -96,10 +108,11 @@ python app-sqlite.py #使用sqlite存储数据
 ├─ requirements.txt
 ├─ static/
 │    ├─ uploads/
+│    ├─ favicon.ico
 │    └─ style.css
 ├─ templates/
 │    ├─ base.html
-│    ├─ ...其他html
+│    ├─ ...other html
 ├─ sample_products.csv
 ├─ README.md
 ```
