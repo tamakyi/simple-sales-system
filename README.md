@@ -45,7 +45,8 @@ pip install -r requirements.txt
 ### 2. 启动项目
 
 ```sh
-python app.py
+python app-mysql.py #使用mysql存储数据
+python app-sqlite.py #使用sqlite存储数据
 ```
 
 ### 3. 访问地址
