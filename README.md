@@ -5,7 +5,7 @@
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products-import.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/sales.png)
-![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/categroies.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/categories.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/users.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/logs.png)
 
