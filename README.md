@@ -1,5 +1,5 @@
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/wolf_sales.webp)
-<center># 狼的小卖部 - 基于Python的简单网页端进销存/销售管理系统</center>
+<p align="center> 狼的小卖部 - 基于Python的简单网页端进销存/销售管理系统</p>
 
 ## 截图
  - 主界面
