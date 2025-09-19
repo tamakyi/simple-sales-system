@@ -5,7 +5,7 @@
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/products-import.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/sales.png)
-![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/categroies.png)
+![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/categories.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/users.png)
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/logs.png)
 
@@ -42,10 +42,26 @@
 pip install -r requirements.txt
 ```
 
+### 2.复制.env.sample为.env并编辑
+```
+UPLOAD_FOLDER = 'static/uploads' #图片上传路径
+SECRET_KEY = mysecretkey #安全密钥，建议替换
+SQLALCHEMY_DATABASE_URI = 'sqlite:///sales.db' # 使用SQLITE作为数据库时使用
+SQLALCHEMY_DATABASE_URI = mysql+pymysql://root:password@localhost:3306/test_sale # 使用MYSQL作为数据库时使用
+MAX_CONTENT_LENGTH = 2097152 #最大上传大小，默认2M，即2*1024*1024
+PER_PAGE = 10 # 商品页面每页体现的商品数量
+BACKGROUND_IMAGE_URL=https://xxx.com/xxx.png # 默认背景图片地址
+BACKGROUND_OPACITY=0.1 # 背景图片不透明度，范围0-1，越接近0越透明。
+BACKGROUND_SIZE=cover #背景图片尺寸，默认cover即可，详情查看web css中关于background_size的参数说明。
+DASHBOARD_ANNOUNCEMENT="请注意：系统将于本周五晚进行维护，届时可能无法访问。"
+ANNOUNCEMENT_ENABLED=True  # 控制公告是否显示
+```
+
 ### 2. 启动项目
 
 ```sh
-python app.py
+python app-mysql.py #使用mysql存储数据
+python app-sqlite.py #使用sqlite存储数据
 ```
 
 ### 3. 访问地址
