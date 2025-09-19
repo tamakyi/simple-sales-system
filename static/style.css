@@ -571,3 +571,185 @@ body {
     margin-bottom: 1rem;
     border-left: 4px solid #ffc107;
 }
+
+/* 简易销售页面样式 - 修复版 */
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.product-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* 图片容器 - 确保图片不会溢出 */
+.product-image-container {
+    width: 100%;
+    height: 120px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.product-thumbnail-simple {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.no-image-placeholder-simple {
+    width: 100%;
+    height: 100%;
+    background-color: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d;
+    text-align: center;
+    font-size: 12px;
+}
+
+.product-info-simple {
+    margin-bottom: 10px;
+}
+
+.sales-operate-form-simple .input-group {
+    flex-wrap: nowrap;
+}
+
+.sales-operate-form-simple .form-control {
+    max-width: 70px;
+    text-align: center;
+}
+
+.sales-operate-form-simple .btn {
+    white-space: nowrap;
+    padding: 0.25rem 0.5rem;
+    font-size: 12px;
+}
+
+/* 手机端优化 */
+@media (max-width: 576px) {
+    .product-image-container {
+        height: 100px;
+    }
+    
+    .sales-operate-form-simple .input-group {
+        flex-direction: column;
+    }
+    
+    .sales-operate-form-simple .form-control {
+        max-width: 100%;
+        margin-bottom: 0.25rem;
+        text-align: center;
+    }
+    
+    .sales-operate-form-simple .btn-group {
+        width: 100%;
+    }
+    
+    .sales-operate-form-simple .btn {
+        width: 50%;
+    }
+    
+    /* 确保手机端每行一个商品 */
+    .col-12 {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+}
+
+/* 平板端优化 */
+@media (max-width: 768px) {
+    .product-card .card-body {
+        padding: 0.75rem;
+    }
+    
+    .product-info-simple h6 {
+        font-size: 0.9rem;
+    }
+    
+    /* 平板端每行两个商品 */
+    .col-sm-6 {
+        flex: 0 0 auto;
+        width: 50%;
+    }
+}
+
+/* 桌面端优化 */
+@media (min-width: 992px) {
+    /* 桌面端每行四个商品 */
+    .col-md-4 {
+        flex: 0 0 auto;
+        width: 25%;
+    }
+}
+
+/* 大屏幕优化 */
+@media (min-width: 1200px) {
+    .col-lg-3 {
+        flex: 0 0 auto;
+        width: 25%;
+    }
+}
+
+/* 确保操作按钮在移动端正确显示 */
+@media (max-width: 576px) {
+    .sales-operate-form-simple .input-group {
+        flex-direction: row;
+        flex-wrap: nowrap;
+    }
+    
+    .sales-operate-form-simple .form-control {
+        max-width: 60px;
+        margin-bottom: 0;
+        margin-right: 0.25rem;
+    }
+    
+    .sales-operate-form-simple .btn {
+        width: auto;
+        flex: 1;
+    }
+}
+
+/* 确保图片加载失败时占位符显示 */
+.product-image-container img[src=""],
+.product-image-container img:not([src]) {
+    display: none;
+}
+
+.product-image-container img[src=""] + .no-image-placeholder-simple,
+.product-image-container img:not([src]) + .no-image-placeholder-simple {
+    display: flex;
+}
+
+/* 确保表格内容居中 */
+.table th.text-center,
+.table td.text-center {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* 确保仪表盘卡片正确对齐 */
+.justify-content-center {
+    justify-content: center !important;
+}
+
+/* 确保卡片高度一致 */
+.h-100 {
+    height: 100% !important;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+}

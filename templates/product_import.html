@@ -33,7 +33,7 @@
                 <h5 class="card-title mb-0">手动添加商品</h5>
             </div>
             <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" id="manual-product-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ manual_form.hidden_tag() }}
                     <div class="row g-3">
@@ -80,7 +80,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // 表单验证
-    const manualForm = document.querySelector('form');
+    const manualForm = document.getElementById('manual-product-form');
     if (manualForm) {
         manualForm.addEventListener('submit', function(e) {
             const name = document.getElementById('{{ manual_form.name.id }}').value;

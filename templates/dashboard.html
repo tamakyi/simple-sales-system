@@ -46,9 +46,9 @@
     </div>
 </div>
 
-<div class="row mb-3">
-    <div class="col-12 col-md-4 dashboard-card">
-        <div class="card text-white bg-info">
+<div class="row mb-3 justify-content-center">
+    <div class="col-12 col-md-4 mb-3 dashboard-card">
+        <div class="card text-white bg-info h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">
                     {% if selected_date == datetime.date.today() %}
@@ -57,23 +57,23 @@
                         {{ selected_date|dateformat('%Y-%m-%d') }}销售额
                     {% endif %}
                 </h5>
-                <p class="card-text fs-4">{{ selected_date_total }}</p>
+                <p class="card-text fs-4">{{ selected_date_total|round(2) }}</p>
             </div>
         </div>
     </div>
-    <div class="col-12 col-md-4 dashboard-card">
-        <div class="card text-white bg-secondary">
+    <div class="col-12 col-md-4 mb-3 dashboard-card">
+        <div class="card text-white bg-secondary h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">昨日销售额</h5>
-                <p class="card-text fs-4">{{ yesterday_total }}</p>
+                <p class="card-text fs-4">{{ yesterday_total|round(2) }}</p>
             </div>
         </div>
     </div>
-    <div class="col-12 col-md-4 dashboard-card">
-        <div class="card text-white bg-success">
+    <div class="col-12 col-md-4 mb-3 dashboard-card">
+        <div class="card text-white bg-success h-100">
             <div class="card-body text-center">
                 <h5 class="card-title">历史总销售额</h5>
-                <p class="card-text fs-4">{{ all_total }}</p>
+                <p class="card-text fs-4">{{ all_total|round(2) }}</p>
             </div>
         </div>
     </div>
@@ -113,7 +113,7 @@
                             {% for item in sale_ranks %}
                             <tr>
                                 <td>{{ item[0] }}</td>
-                                <td>{{ item[1] }}</td>
+                                <td>{{ item[1]|round(2) }}</td>
                                 <td class="mobile-hidden">{{ item[2] }}</td>
                             </tr>
                             {% endfor %}
@@ -149,7 +149,7 @@
                     <tr>
                         <td>{{ s.product.name }}</td>
                         <td>{{ s.quantity }}</td>
-                        <td class="mobile-hidden">{{ s.amount }}</td>
+                        <td class="mobile-hidden">{{ s.amount|round(2) }}</td>
                         <td>{{ s.created_at.strftime('%m-%d %H:%M') }}</td>
                     </tr>
                     {% endfor %}
@@ -163,7 +163,12 @@
 var myChart = echarts.init(document.getElementById('cat-sale-pie'));
 var option = {
     title: {text: '分类销售额占比', left: 'center', textStyle: {fontSize: 14}},
-    tooltip: {trigger: 'item'},
+    tooltip: {
+        trigger: 'item',
+        formatter: function(params) {
+            return params.name + ': ' + params.value.toFixed(2) + ' (' + params.percent + '%)';
+        }
+    },
     legend: {orient: 'horizontal', bottom: 0, textStyle: {fontSize: 12}},
     series: [{
         name: '销售额',
@@ -173,7 +178,12 @@ var option = {
             {% for i in range(cat_names|length) %}
             {value: {{ cat_amounts[i] }}, name: "{{ cat_names[i] }}"}{% if not loop.last %},{% endif %}
             {% endfor %}
-        ]
+        ],
+        label: {
+            formatter: function(params) {
+                return params.name + ': ' + params.value.toFixed(2) + ' (' + params.percent + '%)';
+            }
+        }
     }]
 };
 myChart.setOption(option);

@@ -20,6 +20,7 @@ from flask import make_response
 import csv
 from io import StringIO
 from flask_wtf.csrf import CSRFProtect, generate_csrf
+from urllib.parse import urlparse, parse_qs
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
@@ -51,6 +52,21 @@ PER_PAGE = app.config['PER_PAGE']
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+def get_redirect_url(target, default_params=None):
+    if default_params is None:
+        default_params = {}
+    
+    # 获取来源页面的查询参数
+    referer = request.referrer or ''
+    parsed_url = urlparse(referer)
+    query_params = parse_qs(parsed_url.query)
+    
+    # 合并参数
+    params = {**default_params, **{k: v[0] for k, v in query_params.items() if k != 'page'}}
+    
+    # 构建URL
+    return url_for(target, **params)
 
 def create_database_if_not_exists():
     """
@@ -315,9 +331,17 @@ def product_edit(pid):
         return redirect(url_for('products'))
     return render_template('product_edit.html', form=form, product=prod)
 
-@app.route('/products/delete/<int:pid>')
+@app.route('/products/delete/<int:pid>', methods=['POST'])
 @login_required
 def delete_product(pid):
+
+    from flask_wtf.csrf import validate_csrf
+    try:
+        validate_csrf(request.form.get('csrf_token')) 
+    except:
+        flash('CSRF令牌验证失败', 'error')
+        return redirect(url_for('products'))
+    
     check_admin()
     prod = db.session.get(Product, pid)
     if prod is None:
@@ -388,9 +412,12 @@ def product_import():
     if csv_form.validate_on_submit() and csv_form.submit.data:
         file = csv_form.file.data
         try:
-            import_products_csv(file)
-            log_action(current_user, "批量导入商品")
-            flash('CSV导入成功', 'success')
+            success = import_products_csv(file)
+            if success:
+                log_action(current_user, "批量导入商品")
+                flash('CSV导入成功', 'success')
+            else:
+                flash('CSV导入失败，请检查数据格式', 'error')
         except Exception as e:
             flash('CSV导入失败: ' + str(e), 'error')
         return redirect(url_for('product_import'))
@@ -473,9 +500,17 @@ def categories():
     cats = Category.query.all()
     return render_template('categories.html', form=form, categories=cats)
 
-@app.route('/categories/delete/<int:cat_id>')
+@app.route('/categories/delete/<int:cat_id>', methods=['POST'])
 @login_required
 def delete_category(cat_id):
+    # 添加CSRF验证
+    from flask_wtf.csrf import validate_csrf
+    try:
+        validate_csrf(request.form.get('csrf_token'))
+    except:
+        flash('CSRF令牌验证失败', 'error')
+        return redirect(url_for('categories'))
+
     check_admin()
     cat = db.session.get(Category, cat_id)
     if cat is None:
@@ -511,7 +546,7 @@ def sales():
         grouped_products[product.category.name].append(product)
     
     # 统计信息
-        stat_map = {}
+    stat_map = {}
     for p in products.items:
         all_sale = db.session.query(func.sum(Sale.amount)).filter(
             Sale.product_id==p.id, Sale.type=='out'
@@ -524,13 +559,41 @@ def sales():
         all_qty = db.session.query(func.sum(Sale.quantity)).filter(
             Sale.product_id==p.id, Sale.type=='out'
         ).scalar() or 0
-        stat_map[p.id] = {'all_sale': all_sale, 'today_sale': today_sale, 'all_qty': all_qty}
+        today_qty = db.session.query(func.sum(Sale.quantity)).filter(
+            Sale.product_id==p.id, Sale.type=='out',
+            Sale.created_at >= today_range()[0],
+            Sale.created_at <= today_range()[1]
+        ).scalar() or 0
+        stat_map[p.id] = {'all_sale': all_sale, 'today_sale': today_sale, 'all_qty': all_qty, 'today_qty': today_qty}
     
     return render_template('sales.html', 
                            products=products, 
                            grouped_products=grouped_products, 
                            cats=cats, 
                            stat_map=stat_map,
+                           keyword=keyword,
+                           category_id=category_id)
+
+@app.route('/sales-simple')
+@login_required
+def sales_simple():
+    page = request.args.get('page', 1, type=int)
+    keyword = request.args.get('keyword', '')  # 获取搜索关键词
+    category_id = request.args.get('category_id', type=int)  # 获取分类筛选
+    cats = Category.query.all()
+    
+    # 查询并分页
+    query = Product.query.order_by(Product.id.desc())
+    if keyword:
+        query = query.filter(Product.name.like(f'%{keyword}%'))
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+
+    products = query.paginate(page=page, per_page=12)  # 每页显示12个商品
+    
+    return render_template('sales-simple.html', 
+                           products=products, 
+                           cats=cats, 
                            keyword=keyword,
                            category_id=category_id)
 
@@ -544,7 +607,16 @@ def sales_operate(pid):
         qty = int(request.form.get("quantity"))
     except Exception:
         flash("数量不合法")
+        # 根据来源页面决定重定向
+        if request.form.get("source_page") == "sales_simple" or 'sales-simple' in (request.referrer or ''):
+            return redirect(url_for('sales_simple'))
         return redirect(url_for('sales'))
+    
+    # 获取来源页面信息，用于操作完成后重定向
+    source_page = request.form.get("source_page")
+    referer = request.referrer or ''
+    redirect_to_simple = source_page == "sales_simple" or 'sales-simple' in referer
+    
     if "submit_in" in request.form:
         prod.stock += qty
         sale = Sale(product_id=prod.id, quantity=qty, type='in', user_id=current_user.id, amount=0)
@@ -555,9 +627,12 @@ def sales_operate(pid):
     elif "submit_out" in request.form:
         if prod.stock < qty:
             flash('库存不足')
-            return redirect(url_for('sales'))
+            # 根据来源页面决定重定向
+            if redirect_to_simple:
+                return redirect(get_redirect_url('sales_simple', {'page': 1}))
+            return redirect(get_redirect_url('sales', {'page': 1}))
         prod.stock -= qty
-        amount = qty * prod.price
+        amount = round(qty * prod.price, 2)
         sale = Sale(product_id=prod.id, quantity=qty, type='out', user_id=current_user.id, amount=amount)
         db.session.add(sale)
         db.session.commit()
@@ -565,7 +640,11 @@ def sales_operate(pid):
         flash('销售成功')
     else:
         flash('未知操作')
-    return redirect(url_for('sales'))
+    
+    # 根据来源页面决定重定向
+    if redirect_to_simple:
+        return redirect(get_redirect_url('sales_simple', {'page': 1}))
+    return redirect(get_redirect_url('sales', {'page': 1}))
 
 @app.route('/sales/detail/<int:pid>')
 @login_required

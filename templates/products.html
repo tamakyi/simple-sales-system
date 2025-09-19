@@ -23,7 +23,7 @@
         </div>
         {% if current_user.is_admin %}
         <div class="col-12 col-md-3">
-            <a href="{{ url_for('product_import') }}" class="btn btn-info btn-sm w-100">批量导入</a>
+            <a href="{{ url_for('product_import') }}" class="btn btn-info btn-sm w-100">商品导入</a>
         </div>
         {% endif %}
     </form>
@@ -82,8 +82,12 @@
                 {% if current_user.is_admin %}
                 <td data-label="操作" class="table-actions">
                     <a href="{{ url_for('product_edit', pid=p.id) }}" class="btn btn-sm btn-primary">编辑</a>
-                    <a href="{{ url_for('delete_product', pid=p.id) }}" class="btn btn-danger btn-sm" 
-                       onclick="return confirm('确认删除该商品？')">删除</a>
+                    <!-- 修改后 -->
+                    <form action="{{ url_for('delete_product', pid=p.id) }}" method="post" style="display: inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger btn-sm" 
+                                onclick="return confirm('确认删除该商品？')">删除</button>
+                    </form>
                 </td>
                 {% endif %}
             </tr>
@@ -121,13 +125,12 @@
 {% if current_user.is_admin %}
 <!-- 批量删除表单 -->
 <form id="batchDeleteForm" action="{{ url_for('batch_delete_products') }}" method="post">
-    <input type="hidden" name="product_ids" id="productIds">
+    <input type="hidden" name="product_ids" id="productIds" value="">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const selectAllHeader = document.getElementById('selectAllHeader');
     const selectAll = document.getElementById('selectAll');
     const checkboxes = document.querySelectorAll('.product-checkbox');
     const batchDeleteBtn = document.getElementById('batchDeleteBtn');
