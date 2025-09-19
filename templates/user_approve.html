@@ -7,6 +7,7 @@
             <div class="card-body">
                 <h3 class="card-title">审核/编辑用户：{{ user.username }}</h3>
                 <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         <label for="{{ form.username.id }}" class="form-label">用户名</label>

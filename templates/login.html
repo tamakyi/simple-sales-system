@@ -7,6 +7,7 @@
             <div class="card-body">
                 <h3 class="card-title text-center">登录</h3>
                 <form method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ form.hidden_tag() }}
                     <div class="mb-3">
                         {{ form.username.label }} 

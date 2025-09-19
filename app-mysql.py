@@ -19,11 +19,13 @@ from urllib.parse import urlparse
 from flask import make_response
 import csv
 from io import StringIO
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
 app = Flask(__name__)
+csrf = CSRFProtect(app)
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret_key')
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
@@ -37,6 +39,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False  # 調試時可設置為 True 查看 SQL 語句
 app.config['SQLALCHEMY_POOL_RECYCLE'] = 280  # 避免 MySQL 連接超時
 app.config['SQLALCHEMY_POOL_SIZE'] = 20      # 連接池大小
+app.config['DASHBOARD_ANNOUNCEMENT'] = os.getenv('DASHBOARD_ANNOUNCEMENT', '')
+app.config['ANNOUNCEMENT_ENABLED'] = os.getenv('ANNOUNCEMENT_ENABLED', 'False').lower() == 'true'
 
 db.init_app(app)
 login_manager = LoginManager(app)
@@ -119,7 +123,9 @@ def inject_background_config():
     return {
         'background_image_url': app.config['BACKGROUND_IMAGE_URL'],
         'background_opacity': app.config['BACKGROUND_OPACITY'],
-        'background_size': app.config['BACKGROUND_SIZE']
+        'background_size': app.config['BACKGROUND_SIZE'],
+        'announcement': app.config['DASHBOARD_ANNOUNCEMENT'],
+        'announcement_enabled': app.config['ANNOUNCEMENT_ENABLED']
     }
 
 # 添加日期格式化过滤器
@@ -322,6 +328,51 @@ def delete_product(pid):
     flash('商品已删除')
     return redirect(url_for('products'))
 
+@app.route('/products/batch_delete', methods=['POST'])
+@login_required
+def batch_delete_products():
+    check_admin()
+    
+    # 使用 Flask-WTF 的 CSRF 验证
+    from flask_wtf.csrf import validate_csrf
+    try:
+        validate_csrf(request.form.get('csrf_token'))
+    except:
+        flash('CSRF令牌验证失败', 'error')
+        return redirect(url_for('products'))
+    
+    product_ids = request.form.get('product_ids', '')
+    if not product_ids:
+        flash('请选择要删除的商品', 'error')
+        return redirect(url_for('products'))
+    
+    try:
+        product_ids = [int(pid) for pid in product_ids.split(',')]
+        deleted_count = 0
+        deleted_names = []
+        
+        for pid in product_ids:
+            product = db.session.get(Product, pid)
+            if product:
+                # 记录删除的商品名称
+                deleted_names.append(product.name)
+                
+                # 删除相关销售记录
+                Sale.query.filter_by(product_id=pid).delete()
+                # 删除商品
+                db.session.delete(product)
+                deleted_count += 1
+        
+        db.session.commit()
+        log_action(current_user, f"批量删除商品: {', '.join(deleted_names)}")
+        flash(f'成功删除 {deleted_count} 个商品', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'删除商品时出错: {str(e)}', 'error')
+    
+    return redirect(url_for('products'))
+
 @app.route('/products/import', methods=['GET', 'POST'])
 @login_required
 def product_import():
@@ -440,10 +491,17 @@ def delete_category(cat_id):
 @login_required
 def sales():
     page = request.args.get('page', 1, type=int)
+    keyword = request.args.get('keyword', '')  # 获取搜索关键词
+    category_id = request.args.get('category_id', type=int)  # 获取分类筛选
     cats = Category.query.all()
     
     # 查询并分页
     query = Product.query.order_by(Product.id.desc())
+    if keyword:
+        query = query.filter(Product.name.like(f'%{keyword}%'))
+    if category_id:
+        query = query.filter_by(category_id=category_id)
+
     products = query.paginate(page=page, per_page=PER_PAGE)
     
     # 按分类分组
@@ -453,7 +511,7 @@ def sales():
         grouped_products[product.category.name].append(product)
     
     # 统计信息
-    stat_map = {}
+        stat_map = {}
     for p in products.items:
         all_sale = db.session.query(func.sum(Sale.amount)).filter(
             Sale.product_id==p.id, Sale.type=='out'
@@ -472,7 +530,9 @@ def sales():
                            products=products, 
                            grouped_products=grouped_products, 
                            cats=cats, 
-                           stat_map=stat_map)
+                           stat_map=stat_map,
+                           keyword=keyword,
+                           category_id=category_id)
 
 @app.route('/sales/operate/<int:pid>', methods=['POST'])
 @login_required

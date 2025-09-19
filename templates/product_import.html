@@ -15,6 +15,7 @@
                     </a>
                 </div>
                 <form method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ csv_form.hidden_tag() }}
                     <div class="mb-3">
                         {{ csv_form.file.label }} 
@@ -33,6 +34,7 @@
             </div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     {{ manual_form.hidden_tag() }}
                     <div class="row g-3">
                         <div class="col-12">

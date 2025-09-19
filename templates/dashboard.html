@@ -10,6 +10,13 @@
 <script src="https://cdnjs.snrat.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
 {% endblock %}
 {% block content %}
+<!-- 公告展示 -->
+{% if announcement_enabled and announcement %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong>公告:</strong> {{ announcement }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
 <!-- 日期选择器 -->
 <div class="row mb-3">
     <div class="col-12">
@@ -17,6 +24,7 @@
             <div class="card-body">
                 <h5 class="card-title">选择日期查看销售情况</h5>
                 <form method="get" class="row g-3 align-items-center">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 col-md-4">
                         <input type="date" name="date" class="form-control" 
                                value="{{ selected_date|dateformat('%Y-%m-%d') }}"

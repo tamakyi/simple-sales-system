@@ -15,11 +15,13 @@ from dotenv import load_dotenv
 from flask import make_response
 import csv
 from io import StringIO
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
 app = Flask(__name__)
+csrf = CSRFProtect(app)
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret_key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///default.db')
@@ -262,6 +264,51 @@ def delete_product(pid):
     db.session.commit()
     log_action(current_user, f"删除商品:{prod.name}")
     flash('商品已删除')
+    return redirect(url_for('products'))
+
+@app.route('/products/batch_delete', methods=['POST'])
+@login_required
+def batch_delete_products():
+    check_admin()
+    
+    # 使用 Flask-WTF 的 CSRF 验证
+    from flask_wtf.csrf import validate_csrf
+    try:
+        validate_csrf(request.form.get('csrf_token'))
+    except:
+        flash('CSRF令牌验证失败', 'error')
+        return redirect(url_for('products'))
+    
+    product_ids = request.form.get('product_ids', '')
+    if not product_ids:
+        flash('请选择要删除的商品', 'error')
+        return redirect(url_for('products'))
+    
+    try:
+        product_ids = [int(pid) for pid in product_ids.split(',')]
+        deleted_count = 0
+        deleted_names = []
+        
+        for pid in product_ids:
+            product = db.session.get(Product, pid)
+            if product:
+                # 记录删除的商品名称
+                deleted_names.append(product.name)
+                
+                # 删除相关销售记录
+                Sale.query.filter_by(product_id=pid).delete()
+                # 删除商品
+                db.session.delete(product)
+                deleted_count += 1
+        
+        db.session.commit()
+        log_action(current_user, f"批量删除商品: {', '.join(deleted_names)}")
+        flash(f'成功删除 {deleted_count} 个商品', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'删除商品时出错: {str(e)}', 'error')
+    
     return redirect(url_for('products'))
 
 @app.route('/products/import', methods=['GET', 'POST'])

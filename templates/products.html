@@ -4,6 +4,7 @@
 <h3>商品管理</h3>
 <div class="mb-2">
     <form method="get" class="row g-2 align-items-center">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="col-12 col-md-4">
             <input type="text" name="keyword" class="form-control" placeholder="搜索商品" value="{{ request.args.get('keyword', '') }}">
         </div>
@@ -28,10 +29,23 @@
     </form>
 </div>
 
+{% if current_user.is_admin %}
+<!-- 批量操作区域 -->
+<div class="batch-actions">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-check">
+        <input class="form-check-input batch-checkbox" type="checkbox" id="selectAll">
+        <label class="form-check-label" for="selectAll">全选</label>
+    </div>
+    <button class="btn btn-danger btn-sm" id="batchDeleteBtn" disabled>批量删除</button>
+</div>
+{% endif %}
+
 <div class="table-responsive">
-    <table class="table table-bordered">
+    <table class="table table-bordered" id="products-table">
         <thead>
             <tr>
+                {% if current_user.is_admin %}<th width="40">选择</th>{% endif %}
                 <th>图片</th>
                 <th>名称</th>
                 <th class="mobile-hidden">分类</th>
@@ -43,21 +57,30 @@
         <tbody>
             {% for p in products.items %}
             <tr>
-                <td>
+                {% if current_user.is_admin %}
+                <td data-label="选择">
+                    <input type="checkbox" class="product-checkbox" value="{{ p.id }}">
+                </td>
+                {% endif %}
+                <td data-label="图片">
                     {% if p.image %}
                         {% if p.image.startswith('http') %}
-                            <img src="{{ p.image }}" width="50" class="product-image img-thumb">
+                            <img src="{{ p.image }}" class="product-thumbnail">
                         {% else %}
-                            <img src="{{ url_for('static', filename=p.image) }}" width="50" class="product-image img-thumb">
+                            <img src="{{ url_for('static', filename=p.image) }}" class="product-thumbnail">
                         {% endif %}
+                    {% else %}
+                        <div class="no-image-placeholder">
+                            <span>无图片</span>
+                        </div>
                     {% endif %}
                 </td>
-                <td>{{ p.name }}</td>
-                <td class="mobile-hidden">{{ p.category.name }}</td>
-                <td>{{ p.price }}</td>
-                <td>{{ p.stock }}</td>
+                <td data-label="名称">{{ p.name }}</td>
+                <td data-label="分类" class="mobile-hidden">{{ p.category.name }}</td>
+                <td data-label="单价">{{ p.price }}</td>
+                <td data-label="库存">{{ p.stock }}</td>
                 {% if current_user.is_admin %}
-                <td class="table-actions">
+                <td data-label="操作" class="table-actions">
                     <a href="{{ url_for('product_edit', pid=p.id) }}" class="btn btn-sm btn-primary">编辑</a>
                     <a href="{{ url_for('delete_product', pid=p.id) }}" class="btn btn-danger btn-sm" 
                        onclick="return confirm('确认删除该商品？')">删除</a>
@@ -94,4 +117,74 @@
         {% endif %}
     </ul>
 </nav>
+
+{% if current_user.is_admin %}
+<!-- 批量删除表单 -->
+<form id="batchDeleteForm" action="{{ url_for('batch_delete_products') }}" method="post">
+    <input type="hidden" name="product_ids" id="productIds">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllHeader = document.getElementById('selectAllHeader');
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.product-checkbox');
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    const productIdsInput = document.getElementById('productIds');
+    
+    // 更新批量删除按钮状态
+    function updateBatchDeleteBtn() {
+        const checkedCount = document.querySelectorAll('.product-checkbox:checked').length;
+        batchDeleteBtn.disabled = checkedCount === 0;
+        if (checkedCount > 0) {
+            batchDeleteBtn.textContent = `批量删除 (${checkedCount})`;
+        } else {
+            batchDeleteBtn.textContent = '批量删除';
+        }
+    }
+    
+    // 全选/取消全选
+    function toggleSelectAll(checked) {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+        updateBatchDeleteBtn();
+    }
+    
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            toggleSelectAll(this.checked);
+        });
+    }
+    
+    // 单个复选框变化时更新全选状态
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBatchDeleteBtn();
+            
+            // 更新全选复选框状态
+            const allChecked = document.querySelectorAll('.product-checkbox:checked').length === checkboxes.length;
+            if (selectAll) {
+                selectAll.checked = allChecked;
+            }
+        });
+    });
+    
+    // 批量删除按钮点击事件
+    batchDeleteBtn.addEventListener('click', function() {
+        const selectedIds = Array.from(document.querySelectorAll('.product-checkbox:checked')).map(checkbox => checkbox.value);
+        if (selectedIds.length === 0) {
+            alert('请选择要删除的商品');
+            return;
+        }
+        
+        if (confirm(`确定要删除这 ${selectedIds.length} 个商品吗？此操作不可恢复。`)) {
+            productIdsInput.value = selectedIds.join(',');
+            document.getElementById('batchDeleteForm').submit();
+        }
+    });
+});
+</script>
+{% endif %}
 {% endblock %}

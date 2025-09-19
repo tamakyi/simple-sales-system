@@ -41,6 +41,7 @@ body.background-image::before {
 /* 表格样式增强 */
 .table {
     background-color: rgba(255, 255, 255, 0.95);
+    width: 100%;
 }
 
 /* 导航栏样式增强 */
@@ -67,11 +68,11 @@ body.background-image .card {
 .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
 }
 
 .table { 
-    font-size: 14px; 
-    min-width: 600px;
+    font-size: 14px;
 }
 
 body { 
@@ -163,7 +164,6 @@ body {
     
     .table {
         font-size: 15px;
-        min-width: auto;
     }
     
     body {
@@ -201,6 +201,7 @@ body {
     max-width: 60px;
     height: auto;
 }
+
 /* 销售操作表单优化 */
 .sales-operate-form .input-group {
   flex-wrap: nowrap;
@@ -246,8 +247,50 @@ body {
     border-bottom: 1px dotted #999;
 }
 
-/* 移动端表格样式 */
+/* 商品图片优化 */
+.product-thumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    display: block;
+}
+
+.no-image-placeholder {
+    width: 50px;
+    height: 50px;
+    background-color: #f8f9fa;
+    border: 1px dashed #dee2e6;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #6c757d;
+    text-align: center;
+}
+
+/* 批量操作按钮样式 */
+.batch-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.batch-checkbox {
+    margin-right: 0.5rem;
+}
+
+/* 手机端专用样式 */
 @media (max-width: 767.98px) {
+    /* 通用表格响应式样式 */
+    .table-responsive {
+        overflow-x: visible;
+    }
+    
     .table-responsive table {
         width: 100%;
         border-collapse: collapse;
@@ -262,14 +305,21 @@ body {
         margin-bottom: 1rem;
         border: 1px solid #dee2e6;
         border-radius: 0.25rem;
+        background-color: #fff;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        padding: 0.5rem;
     }
     
     .table-responsive td {
-        display: block;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         text-align: right;
         padding: 0.75rem;
         position: relative;
         border-bottom: 1px solid #dee2e6;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .table-responsive td:last-child {
@@ -278,9 +328,246 @@ body {
     
     .table-responsive td::before {
         content: attr(data-label);
-        position: absolute;
-        left: 0.75rem;
         font-weight: bold;
         text-align: left;
+        margin-right: 1rem;
+        flex-shrink: 0;
+        width: 40%;
     }
+    
+    /* 商品表格特定样式 */
+    #products-table td:nth-child(1)::before { content: "选择"; }
+    #products-table td:nth-child(2)::before { content: "图片"; }
+    #products-table td:nth-child(3)::before { content: "名称"; }
+    #products-table td:nth-child(4)::before { content: "分类"; }
+    #products-table td:nth-child(5)::before { content: "单价"; }
+    #products-table td:nth-child(6)::before { content: "库存"; }
+    #products-table td:nth-child(7)::before { content: "操作"; }
+    
+    /* 销售表格特定样式 */
+    #sales-table td:nth-child(1)::before { content: "图片"; }
+    #sales-table td:nth-child(2)::before { content: "商品"; }
+    #sales-table td:nth-child(3)::before { content: "库存"; }
+    #sales-table td:nth-child(4)::before { content: "历史销售额"; }
+    #sales-table td:nth-child(5)::before { content: "今日销售额"; }
+    #sales-table td:nth-child(6)::before { content: "历史销量"; }
+    #sales-table td:nth-child(7)::before { content: "操作"; }
+    #sales-table td:nth-child(8)::before { content: "详情"; }
+    
+    /* 操作按钮组优化 */
+    .table-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+    
+    .table-actions .btn {
+        flex: 1;
+        min-width: auto;
+        font-size: 12px;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* 图片单元格优化 */
+    .product-image-cell {
+        justify-content: flex-start !important;
+    }
+    
+    .product-image-cell::before {
+        margin-right: 0.5rem;
+    }
+    
+    /* 批量操作区域优化 */
+    .batch-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .batch-actions .form-check {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* 商品图片在手机端左对齐 */
+    .product-thumbnail {
+        margin: 0;
+    }
+    
+    .no-image-placeholder {
+        margin: 0;
+    }
+    
+    /* 销售页面特定优化 */
+    .category-card {
+        overflow: visible;
+    }
+    
+    .category-card .table-responsive {
+        overflow: visible;
+    }
+    
+    /* 修复销售页面操作表单 */
+    .sales-operate-form .input-group {
+        flex-direction: column;
+        min-width: auto;
+    }
+    
+    .sales-operate-form .form-control {
+        max-width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    
+    .sales-operate-form .btn {
+        width: 100%;
+        margin-bottom: 0.25rem;
+    }
+    
+    .sales-operate-form .btn:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* 修复分类卡片标题 */
+    .category-card .card-header {
+        padding: 0.5rem;
+    }
+    
+    .category-card .card-header h5 {
+        font-size: 1rem;
+    }
+}
+
+/* 手机端小屏幕优化 */
+@media (max-width: 576px) {
+    .product-thumbnail {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .no-image-placeholder {
+        width: 40px;
+        height: 40px;
+        font-size: 9px;
+    }
+    
+    /* 进一步压缩表格间距 */
+    .table-responsive td {
+        padding: 0.5rem;
+    }
+    
+    .table-responsive td::before {
+        width: 35%;
+        font-size: 13px;
+    }
+    
+    /* 调整容器内边距 */
+    .container {
+        padding: 15px;
+    }
+    
+    /* 调整卡片内边距 */
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    /* 调整分页样式 */
+    .pagination {
+        font-size: 14px;
+    }
+    
+    .page-link {
+        padding: 0.25rem 0.5rem;
+    }
+}
+
+/* 确保移动端批量操作按钮正确显示 */
+@media (max-width: 576px) {
+    .batch-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .batch-actions .form-check {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* 修复桌面端图片居中问题 */
+@media (min-width: 768px) {
+    .product-thumbnail {
+        margin: 0 auto;
+        display: block;
+    }
+    
+    .no-image-placeholder {
+        margin: 0 auto;
+        display: flex;
+    }
+}
+
+/* 销售页面表格修复 */
+#sales-table {
+    width: 100%;
+}
+
+#sales-table td, #sales-table th {
+    vertical-align: middle;
+}
+
+/* 商品管理页面表格修复 */
+#products-table {
+    width: 100%;
+}
+
+#products-table td, #products-table th {
+    vertical-align: middle;
+}
+
+/* 手机端导航菜单优化 */
+@media (max-width: 991.98px) {
+    .navbar-collapse {
+        background-color: rgba(248, 249, 250, 0.98);
+        padding: 1rem;
+        border-radius: 0.25rem;
+        margin-top: 0.5rem;
+    }
+}
+
+/* 销售页面元素居中对齐 */
+#sales-table td {
+    text-align: center;
+    vertical-align: middle !important;
+}
+
+/* 数量输入框和按钮居中 */
+.sales-operate-form {
+    justify-content: center;
+}
+
+.sales-operate-form .input-group {
+    justify-content: center;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    /* 确保移动端数据标签也居中 */
+    .table-responsive td::before {
+        text-align: center;
+        margin-right: 0.5rem;
+    }
+    
+    /* 商品图片居中 */
+    .product-image-cell {
+        justify-content: center !important;
+    }
+    
+    /* 操作按钮组居中 */
+    .sales-operate-form {
+        justify-content: center;
+    }
+}
+
+/* 公告栏样式 */
+.alert-warning {
+    margin-bottom: 1rem;
+    border-left: 4px solid #ffc107;
 }

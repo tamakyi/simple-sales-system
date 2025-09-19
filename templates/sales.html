@@ -2,6 +2,30 @@
 {% block title %}进销存{% endblock %}
 {% block content %}
 <h3>进销存</h3>
+
+<!-- 添加搜索表单 -->
+<div class="mb-2">
+    <form method="get" class="row g-2 align-items-center">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-12 col-md-4">
+            <input type="text" name="keyword" class="form-control" placeholder="搜索商品" value="{{ keyword }}">
+        </div>
+        <div class="col-12 col-md-3">
+            <select name="category_id" class="form-select">
+                <option value="">所有分类</option>
+                {% for cat in cats %}
+                <option value="{{ cat.id }}" {% if category_id == cat.id %}selected{% endif %}>
+                    {{ cat.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <button class="btn btn-outline-primary w-100">搜索</button>
+        </div>
+    </form>
+</div>
+
 {% for category, items in grouped_products.items() %}
   <div class="card category-card mb-3">
     <div class="card-header bg-light">
@@ -22,38 +46,39 @@
           </tr>
         </thead>
         <tbody>
-          {% for p in items %}
-          <tr>
-            <td class="product-image-cell">
-              {% if p.image %}
-                {% if p.image.startswith('http') %}
-                  <img src="{{ p.image }}" class="product-thumbnail" alt="{{ p.name }}">
-                {% else %}
-                  <img src="{{ url_for('static', filename=p.image) }}" class="product-thumbnail" alt="{{ p.name }}">
-                {% endif %}
+        {% for p in items %}
+        <tr>
+          <td data-label="图片" class="product-image-cell">
+            {% if p.image %}
+              {% if p.image.startswith('http') %}
+                <img src="{{ p.image }}" class="product-thumbnail" alt="{{ p.name }}">
               {% else %}
-                <div class="no-image-placeholder">
-                  <span>无图片</span>
-                </div>
+                <img src="{{ url_for('static', filename=p.image) }}" class="product-thumbnail" alt="{{ p.name }}">
               {% endif %}
-            </td>
-            <td>{{ p.name }}</td>
-            <td>{{ p.stock }}</td>
-            <td class="mobile-hidden">{{ stat_map[p.id].all_sale }}</td>
-            <td class="mobile-hidden">{{ stat_map[p.id].today_sale }}</td>
-            <td class="mobile-hidden">{{ stat_map[p.id].all_qty }}</td>
-            <td>
-              <form method="post" action="{{ url_for('sales_operate', pid=p.id) }}" class="sales-operate-form">
-                <div class="input-group input-group-sm">
-                  <input type="number" name="quantity" min="1" class="form-control" placeholder="数量" required>
-                  <button type="submit" name="submit_in" class="btn btn-success">进货</button>
-                  <button type="submit" name="submit_out" class="btn btn-danger">销售</button>
-                </div>
-              </form>
-            </td>
-            <td><a href="{{ url_for('sales_detail', pid=p.id) }}" class="btn btn-info btn-sm">流水</a></td>
-          </tr>
-          {% endfor %}
+            {% else %}
+              <div class="no-image-placeholder">
+                <span>无图片</span>
+              </div>
+            {% endif %}
+          </td>
+          <td data-label="商品">{{ p.name }}</td>
+          <td data-label="库存">{{ p.stock }}</td>
+          <td data-label="历史销售额" class="mobile-hidden">{{ stat_map[p.id].all_sale }}</td>
+          <td data-label="今日销售额" class="mobile-hidden">{{ stat_map[p.id].today_sale }}</td>
+          <td data-label="历史销量" class="mobile-hidden">{{ stat_map[p.id].all_qty }}</td>
+          <td data-label="操作">
+            <form method="post" action="{{ url_for('sales_operate', pid=p.id) }}" class="sales-operate-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div class="input-group input-group-sm">
+                <input type="number" name="quantity" min="1" class="form-control" placeholder="数量" required>
+                <button type="submit" name="submit_in" class="btn btn-success">进货</button>
+                <button type="submit" name="submit_out" class="btn btn-danger">销售</button>
+              </div>
+            </form>
+          </td>
+          <td data-label="详情"><a href="{{ url_for('sales_detail', pid=p.id) }}" class="btn btn-info btn-sm">流水</a></td>
+        </tr>
+        {% endfor %}
         </tbody>
       </table>
     </div>
@@ -63,13 +88,21 @@
 <nav aria-label="Page navigation">
   <ul class="pagination justify-content-center">
     {% if products.has_prev %}
-      <li class="page-item"><a class="page-link" href="?page={{ products.prev_num }}">&laquo;</a></li>
+      <li class="page-item">
+          <a class="page-link" href="?page={{ products.prev_num }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if category_id %}&category_id={{ category_id }}{% endif %}">&laquo;</a>
+      </li>
     {% endif %}
     {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-      <li class="page-item {% if products.page == page_num %}active{% endif %}"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+      {% if page_num %}
+        <li class="page-item {% if products.page == page_num %}active{% endif %}">
+            <a class="page-link" href="?page={{ page_num }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if category_id %}&category_id={{ category_id }}{% endif %}">{{ page_num }}</a>
+        </li>
+      {% endif %}
     {% endfor %}
     {% if products.has_next %}
-      <li class="page-item"><a class="page-link" href="?page={{ products.next_num }}">&raquo;</a></li>
+      <li class="page-item">
+          <a class="page-link" href="?page={{ products.next_num }}{% if keyword %}&keyword={{ keyword }}{% endif %}{% if category_id %}&category_id={{ category_id }}{% endif %}">&raquo;</a>
+      </li>
     {% endif %}
   </ul>
 </nav>

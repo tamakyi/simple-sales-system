@@ -3,6 +3,7 @@
 {% block content %}
 <h3>编辑商品</h3>
 <form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {{ form.hidden_tag() }}
     <div class="row g-3">
         <div class="col-12 col-md-6">
