@@ -35,6 +35,7 @@ class Sale(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     product = db.relationship('Product')
     user = db.relationship('User')
+    is_reversed = db.Column(db.Boolean, default=False)
 
 class Log(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,3 +43,5 @@ class Log(db.Model):
     action = db.Column(db.String(255))
     ts = db.Column(db.DateTime, default=datetime.now)
     user = db.relationship('User')
+    sale_id = db.Column(db.Integer, db.ForeignKey('sale.id'), nullable=True)
+    sale = db.relationship('Sale')

@@ -51,14 +51,19 @@ class CategoryForm(FlaskForm):
     submit = SubmitField('添加')
 
 class UserApproveForm(FlaskForm):
-    is_active = BooleanField('激活')
-    is_admin = BooleanField('管理员')
-    submit = SubmitField('保存')
-    username = StringField('用户名', validators=[DataRequired(), Length(min=3, max=50, message='用户名长度必须在3到50个字符之间')])
+    username = StringField('用户名', validators=[DataRequired()])
+    is_active = BooleanField('激活账户')
+    is_admin = BooleanField('管理员权限')
+    
+    # 修改密码字段为可选，只有在填写时才验证
     old_password = PasswordField('当前密码', validators=[Optional()])
     new_password = PasswordField('新密码', validators=[
-        Length(min=6, message='密码至少6位'),
-        EqualTo('confirm_password', message='两次密码不一致')
+        Optional(), 
+        Length(min=6, message='密码长度至少为6位')
     ])
-    confirm_password = PasswordField('确认新密码')
+    confirm_password = PasswordField('确认新密码', validators=[
+        Optional(),
+        EqualTo('new_password', message='两次输入的密码不一致')
+    ])
+    
     submit = SubmitField('保存')

@@ -7,6 +7,7 @@ from forms import *
 from models import db, User, Category, Product, Sale, Log
 from utils import import_products_csv
 import os
+import os.path as op
 import datetime
 import openpyxl
 from io import BytesIO
@@ -28,8 +29,9 @@ load_dotenv(os.path.join(basedir, '.env'))
 app = Flask(__name__)
 csrf = CSRFProtect(app)
 
+app.config['APP_TITLE'] = os.getenv('APP_TITLE', '狼的小卖部')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret_key')
-app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
+app.config['UPLOAD_FOLDER'] = op.abspath(op.expanduser(os.getenv('UPLOAD_FOLDER', 'static/uploads')))
 app.config['BACKGROUND_IMAGE_URL'] = os.getenv('BACKGROUND_IMAGE_URL', '')
 app.config['BACKGROUND_OPACITY'] = float(os.getenv('BACKGROUND_OPACITY', 0.1))
 app.config['BACKGROUND_SIZE'] = os.getenv('BACKGROUND_SIZE', 'cover')
@@ -40,6 +42,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False  # 調試時可設置為 True 查看 SQL 語句
 app.config['SQLALCHEMY_POOL_RECYCLE'] = 280  # 避免 MySQL 連接超時
 app.config['SQLALCHEMY_POOL_SIZE'] = 20      # 連接池大小
+app.config['SQLALCHEMY_POOL_RECYCLE'] = 3600  # 1小时回收连接
 app.config['DASHBOARD_ANNOUNCEMENT'] = os.getenv('DASHBOARD_ANNOUNCEMENT', '')
 app.config['ANNOUNCEMENT_ENABLED'] = os.getenv('ANNOUNCEMENT_ENABLED', 'False').lower() == 'true'
 app.config['ANALYZE_SCRIPT'] = os.getenv('ANALYZE_SCRIPT', '')
@@ -118,9 +121,17 @@ def create_database_if_not_exists():
             print(f"数据库连接错误: {e}")
             return False
 
-def log_action(user, action):
-    db.session.add(Log(user_id=user.id, action=action))
+def log_action(user, action, sale=None):
+    db.session.add(Log(user_id=user.id, action=action, sale=sale))
     db.session.commit()
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -145,7 +156,8 @@ def inject_background_config():
         'announcement': app.config['DASHBOARD_ANNOUNCEMENT'],
         'announcement_enabled': app.config['ANNOUNCEMENT_ENABLED'],
         'analyzer_script': app.config['ANALYZE_SCRIPT'],
-        'analyze_enable': app.config['ANALYZE_ENABLE']
+        'analyze_enable': app.config['ANALYZE_ENABLE'],
+        'app_title': app.config['APP_TITLE']
     }
 
 # 添加日期格式化过滤器
@@ -180,6 +192,14 @@ def dashboard():
     # 获取前一天的日期
     prev_date = selected_date - datetime.timedelta(days=1)
     
+    # 获取今天的日期范围
+    today = datetime.date.today()
+    today_start, today_end = get_date_range(today)
+    
+    # 获取昨天的日期范围
+    yesterday = today - datetime.timedelta(days=1)
+    y_start, y_end = get_date_range(yesterday)
+    
     # 销售排行榜（选定日期）
     sale_ranks = db.session.query(
         Product.name,
@@ -187,6 +207,7 @@ def dashboard():
         func.sum(Sale.quantity).label("total_qty")
     ).join(Sale.product).filter(
         Sale.type=='out', 
+        Sale.is_reversed == False,  # 添加过滤条件
         Sale.created_at >= selected_start, 
         Sale.created_at <= selected_end
     ).group_by(Product.id).order_by(desc("total_amount")).limit(5).all()
@@ -197,25 +218,27 @@ def dashboard():
     ).join(Product, Product.category_id == Category.id).join(Sale, Sale.product_id == Product.id)\
      .filter(
          Sale.type=='out',
+         Sale.is_reversed == False,  # 添加过滤条件
          Sale.created_at >= selected_start,
          Sale.created_at <= selected_end
      ).group_by(Category.id).all()
+    
+    # 提取分类名称和销售额
     cat_names = [c[0] for c in cat_sales]
     cat_amounts = [float(c[1] or 0) for c in cat_sales]
 
     # 今日销售额
-    today_start, today_end = get_date_range(datetime.date.today())
     today_total = db.session.query(func.sum(Sale.amount)).filter(
         Sale.type=='out', 
+        Sale.is_reversed == False,  # 添加过滤条件
         Sale.created_at >= today_start, 
         Sale.created_at <= today_end
     ).scalar() or 0
     
     # 昨日销售额
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
-    y_start, y_end = get_date_range(yesterday)
     yesterday_total = db.session.query(func.sum(Sale.amount)).filter(
         Sale.type=='out', 
+        Sale.is_reversed == False,  # 添加过滤条件
         Sale.created_at >= y_start, 
         Sale.created_at <= y_end
     ).scalar() or 0
@@ -223,16 +246,18 @@ def dashboard():
     # 选定日期的销售额
     selected_date_total = db.session.query(func.sum(Sale.amount)).filter(
         Sale.type=='out', 
+        Sale.is_reversed == False,  # 添加过滤条件
         Sale.created_at >= selected_start, 
         Sale.created_at <= selected_end
     ).scalar() or 0
     
     # 历史总销售额
-    all_total = db.session.query(func.sum(Sale.amount)).filter(Sale.type=='out').scalar() or 0
+    all_total = db.session.query(func.sum(Sale.amount)).filter(Sale.type=='out', Sale.is_reversed == False).scalar() or 0
     
     # 选定日期的销售流水
     sales = Sale.query.filter(
         Sale.type=='out',
+        Sale.is_reversed == False,  # 添加过滤条件
         Sale.created_at >= selected_start,
         Sale.created_at <= selected_end
     ).order_by(Sale.created_at.desc()).limit(20).all()
@@ -453,7 +478,7 @@ def product_import():
             db.session.add(product)
             db.session.commit()
 
-            log_action(current_user, f"手动添加商品: {product.name}")
+            log_action(current_user, f"手动添加商品: {product.name} (ID:{product.id})")
             flash('商品添加成功', 'success')
             return redirect(url_for('product_import'))
 
@@ -553,20 +578,22 @@ def sales():
     stat_map = {}
     for p in products.items:
         all_sale = db.session.query(func.sum(Sale.amount)).filter(
-            Sale.product_id==p.id, Sale.type=='out'
+            Sale.product_id==p.id, Sale.type=='out', Sale.is_reversed == False
         ).scalar() or 0
         today_sale = db.session.query(func.sum(Sale.amount)).filter(
             Sale.product_id==p.id, Sale.type=='out',
             Sale.created_at >= today_range()[0],
-            Sale.created_at <= today_range()[1]
+            Sale.created_at <= today_range()[1],
+            Sale.is_reversed == False
         ).scalar() or 0
         all_qty = db.session.query(func.sum(Sale.quantity)).filter(
-            Sale.product_id==p.id, Sale.type=='out'
+            Sale.product_id==p.id, Sale.type=='out', Sale.is_reversed == False
         ).scalar() or 0
         today_qty = db.session.query(func.sum(Sale.quantity)).filter(
             Sale.product_id==p.id, Sale.type=='out',
             Sale.created_at >= today_range()[0],
-            Sale.created_at <= today_range()[1]
+            Sale.created_at <= today_range()[1],
+            Sale.is_reversed == False
         ).scalar() or 0
         stat_map[p.id] = {'all_sale': all_sale, 'today_sale': today_sale, 'all_qty': all_qty, 'today_qty': today_qty}
     
@@ -626,7 +653,7 @@ def sales_operate(pid):
         sale = Sale(product_id=prod.id, quantity=qty, type='in', user_id=current_user.id, amount=0)
         db.session.add(sale)
         db.session.commit()
-        log_action(current_user, f"进货:{prod.name} 数量:{qty}")
+        log_action(current_user, f"进货:{prod.name} 数量:{qty}", sale=sale)
         flash('进货成功')
     elif "submit_out" in request.form:
         if prod.stock < qty:
@@ -640,7 +667,7 @@ def sales_operate(pid):
         sale = Sale(product_id=prod.id, quantity=qty, type='out', user_id=current_user.id, amount=amount)
         db.session.add(sale)
         db.session.commit()
-        log_action(current_user, f"销售:{prod.name} 数量:{qty}")
+        log_action(current_user, f"销售:{prod.name} 数量:{qty}", sale=sale)
         flash('销售成功')
     else:
         flash('未知操作')
@@ -656,13 +683,55 @@ def sales_detail(pid):
     prod = db.session.get(Product, pid)
     if prod is None:
         abort(404)
-    sales = Sale.query.filter_by(product_id=pid, type='out').order_by(Sale.created_at.desc()).all()
+    
+    # 使用 filter() 方法
+    sales = Sale.query.filter(
+        Sale.product_id == pid, 
+        Sale.type == 'out',
+        Sale.is_reversed == False
+    ).order_by(Sale.created_at.desc()).all()
+    
     return render_template('sales_detail.html', prod=prod, sales=sales)
+
+@app.route('/sales/reverse/<int:sale_id>', methods=['POST'])
+@login_required
+def reverse_sale(sale_id):
+    """撤回进销存操作"""
+    sale = Sale.query.get_or_404(sale_id)
+    product = sale.product
+    
+    # 检查操作权限（管理员或操作者本人）
+    if not (current_user.is_admin or current_user.id == sale.user_id):
+        flash('无权限执行此操作', 'danger')
+        return redirect(url_for('logs'))
+    
+    try:
+        # 根据操作类型反向操作
+        if sale.type == 'in':
+            # 撤回进货：减少库存
+            product.stock -= sale.quantity
+        elif sale.type == 'out':
+            # 撤回销售：增加库存
+            product.stock += sale.quantity
+        
+        # 标记为已撤回
+        sale.is_reversed = True
+        db.session.commit()
+        
+        # 记录日志
+        log_action(current_user, f"撤回了{sale.type}操作: {sale.product.name} x {sale.quantity}", sale=sale)
+        flash('撤回成功', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'撤回失败: {str(e)}', 'danger')
+    
+    return redirect(url_for('logs'))
+
 
 @app.route('/export')
 @login_required
 def export():
-    sales = Sale.query.all()
+    sales = Sale.query.filter(Sale.is_reversed == False).all()
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.append(['商品', '数量', '类型', '金额', '操作人', '时间'])
@@ -690,38 +759,70 @@ def user_approve(uid):
     form = UserApproveForm(obj=user)
     
     if form.validate_on_submit():
+        # 初始化修改标记
+        changes_made = False
+        message_parts = []
 
         # 处理用户名修改
         new_username = form.username.data.strip()
         if new_username != user.username:
-            # 检查新用户名是否已存在（排除当前用户）
             existing_user = User.query.filter(User.username == new_username, User.id != user.id).first()
             if existing_user:
                 flash('用户名已存在，请选择其他用户名', 'error')
                 return render_template('user_approve.html', form=form, user=user)
             
-            # 更新用户名
             old_username = user.username
             user.username = new_username
             log_action(current_user, f"修改用户 {old_username} 的用户名为 {new_username}")
-            flash('用户名已更新', 'success')
+            changes_made = True
+            message_parts.append("用户名")
 
-        # 处理密码修改
-        if form.old_password.data:
-            if not check_password_hash(user.password, form.old_password.data):
-                flash('当前密码错误', 'error')
+        # 处理密码修改 - 只在提供了旧密码和新密码时才验证和更新
+        if form.old_password.data or form.new_password.data:
+            # 如果提供了旧密码但新密码为空
+            if form.old_password.data and not form.new_password.data:
+                flash('如果修改密码，必须填写新密码', 'error')
                 return render_template('user_approve.html', form=form, user=user)
             
-            # 更新密码
-            user.password = generate_password_hash(form.new_password.data)
-            db.session.commit()
-            flash('密码已成功更新', 'success')
+            # 如果提供了新密码但旧密码为空
+            if form.new_password.data and not form.old_password.data:
+                flash('要修改密码，必须提供当前密码', 'error')
+                return render_template('user_approve.html', form=form, user=user)
+            
+            # 只有当两个字段都提供时才进行验证
+            if form.old_password.data and form.new_password.data:
+                if not check_password_hash(user.password, form.old_password.data):
+                    flash('当前密码错误', 'error')
+                    return render_template('user_approve.html', form=form, user=user)
+                
+                if len(form.new_password.data) < 6:
+                    flash('新密码长度至少为6位', 'error')
+                    return render_template('user_approve.html', form=form, user=user)
+                
+                user.password = generate_password_hash(form.new_password.data)
+                changes_made = True
+                message_parts.append("密码")
         
-        # 保留原有功能
+        # 处理状态修改
+        if user.is_active != form.is_active.data:
+            changes_made = True
+            message_parts.append("激活状态")
+        if user.is_admin != form.is_admin.data:
+            changes_made = True
+            message_parts.append("管理员权限")
+        
+        # 应用所有修改
         user.is_active = form.is_active.data
         user.is_admin = form.is_admin.data
-        db.session.commit()
-        flash('用户信息已保存', 'success')
+        
+        # 如果有修改才提交并显示消息
+        if changes_made:
+            db.session.commit()  # 统一提交一次
+            message = "已更新" + "、".join(message_parts)
+            flash(f'{message} 信息已保存', 'success')
+        else:
+            flash('没有检测到任何修改', 'info')
+        
         return redirect(url_for('users'))
     
     return render_template('user_approve.html', form=form, user=user)
@@ -769,8 +870,26 @@ def delete_user(uid):
 @login_required
 def logs():
     check_admin()
-    logs = Log.query.order_by(Log.ts.desc()).limit(100).all()
+    page = request.args.get('page', 1, type=int)
+    #logs = Log.query.order_by(Log.ts.desc()).paginate(page=page, per_page=20)
+
+    from sqlalchemy.orm import joinedload
+    logs = Log.query.options(joinedload(Log.sale))\
+                   .order_by(Log.ts.desc())\
+                   .paginate(page=page, per_page=20)
+
     return render_template('logs.html', logs=logs)
+
+def migrate_log_sale_relations():
+    """将历史销售记录与日志关联"""
+    logs = Log.query.filter(Log.action.like('%销售:%') | Log.action.like('%进货:%')).all()
+    for log in logs:
+        # 从日志信息中提取销售ID（需要根据实际日志格式调整）
+        # 此处仅为示例，实际实现需根据日志格式定制
+        if 'ID:' in log.action:
+            sale_id = int(log.action.split('ID:')[1].split()[0])
+            log.sale_id = sale_id
+    db.session.commit()
 
 if __name__ == '__main__':
     with app.app_context():

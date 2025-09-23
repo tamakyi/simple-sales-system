@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}销售管理系统{% endblock %}</title>
+    <title>{% block title %} {{ app_title }} {% endblock %}</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
-    <link href="https://cdnjs.snrat.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.snrat.com/ajax/libs/bootstrap/5.3.7/css/bootstrap.min.css" rel="stylesheet">
     {% if analyze_enable and analyzer_script %} {{ analyzer_script|safe }} {% endif %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
@@ -23,23 +23,22 @@
 <body class="{% if background_image_url %}background-image{% endif %}">
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
-        <a class="navbar-brand" href="/">销售系统</a>
+        <a class="navbar-brand" href="/">{{ app_title }}</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="/">仪表盘</a></li>
                 <li class="nav-item"><a class="nav-link" href="/products">商品管理</a></li>
                 <li class="nav-item"><a class="nav-link" href="/sales">销售管理</a></li>
                 <li class="nav-item"><a class="nav-link" href="/sales-simple">简易销售</a></li>
                 <li class="nav-item"><a class="nav-link" href="/categories">分类管理</a></li>
-                <li class="nav-item"><a class="nav-link" href="/export">导出报表</a></li>
                 {% if current_user.is_authenticated and current_user.is_admin %}
                 <li class="nav-item"><a class="nav-link" href="/users">用户管理</a></li>
                 <li class="nav-item"><a class="nav-link" href="/logs">操作日志</a></li>
                 {% endif %}
+                <li class="nav-item"><a class="nav-link" href="/export">导出报表</a></li>
             </ul>
             {% if current_user.is_authenticated %}
             <span class="navbar-text me-2">用户：{{ current_user.username }}{% if current_user.is_admin %} 
@@ -62,6 +61,6 @@
     {% endwith %}
     {% block content %}{% endblock %}
 </div>
-<script src="https://cdnjs.snrat.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.snrat.com/ajax/libs/bootstrap/5.3.7/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
