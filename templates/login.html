@@ -17,13 +17,41 @@
                         {{ form.password.label }} 
                         {{ form.password(class="form-control") }}
                     </div>
+                    <div class="mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-7">
+                                {{ form.captcha.label }}
+                                {{ form.captcha(class="form-control", placeholder="输入验证码") }}
+                            </div>
+                            <div class="col-5">
+                                <img src="{{ url_for('captcha') }}" id="captcha-img" 
+                                     class="img-fluid border rounded" 
+                                     style="cursor: pointer; height: 38px;" 
+                                     onclick="refreshCaptcha()" 
+                                     title="点击刷新验证码">
+                            </div>
+                        </div>
+                    </div>
                     <button class="btn btn-primary w-100">{{ form.submit.label }}</button>
                     <div class="text-center mt-3">
                         <a href="{{ url_for('register') }}">注册新账户</a>
                     </div>
                 </form>
+                
+                {% if login_locked %}
+                <div class="alert alert-warning mt-3">
+                    <small>登录失败次数过多，请等待 {{ lock_time_remaining }} 分钟后重试</small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function refreshCaptcha() {
+    var captchaImg = document.getElementById('captcha-img');
+    captchaImg.src = "{{ url_for('captcha') }}?" + new Date().getTime();
+}
+</script>
 {% endblock %}

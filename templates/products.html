@@ -45,24 +45,24 @@
     <table class="table table-bordered" id="products-table">
         <thead>
             <tr>
-                {% if current_user.is_admin %}<th width="40">选择</th>{% endif %}
-                <th>图片</th>
-                <th>名称</th>
-                <th class="mobile-hidden">分类</th>
-                <th>单价</th>
-                <th>库存</th>
-                {% if current_user.is_admin %}<th>操作</th>{% endif %}
+                {% if current_user.is_admin %}<th width="60" class="text-center">选择</th>{% endif %}
+                <th class="text-center">图片</th>
+                <th class="text-center">名称</th>
+                <th class="mobile-hidden text-center">分类</th>
+                <th class="text-center">单价</th>
+                <th class="text-center">库存</th>
+                {% if current_user.is_admin %}<th class="text-center">操作</th>{% endif %}
             </tr>
         </thead>
         <tbody>
             {% for p in products.items %}
             <tr>
                 {% if current_user.is_admin %}
-                <td data-label="选择">
+                <td data-label="选择" class="text-center">
                     <input type="checkbox" class="product-checkbox" value="{{ p.id }}">
                 </td>
                 {% endif %}
-                <td data-label="图片">
+                <td data-label="图片" class="text-center">
                     {% if p.image %}
                         {% if p.image.startswith('http') %}
                             <img src="{{ p.image }}" class="product-thumbnail" alt="{{ p.name }}">
@@ -75,12 +75,12 @@
                         </div>
                     {% endif %}
                 </td>
-                <td data-label="名称">{{ p.name }}</td>
-                <td data-label="分类" class="mobile-hidden">{{ p.category.name }}</td>
-                <td data-label="单价">{{ p.price }}</td>
-                <td data-label="库存">{{ p.stock }}</td>
+                <td data-label="名称" class="text-center">{{ p.name }}</td>
+                <td data-label="分类" class="mobile-hidden text-center">{{ p.category.name }}</td>
+                <td data-label="单价" class="text-center">{{ p.price }}</td>
+                <td data-label="库存" class="text-center">{{ p.stock }}</td>
                 {% if current_user.is_admin %}
-                <td data-label="操作" class="table-actions">
+                <td data-label="操作" class="table-actions text-center">
                     <a href="{{ url_for('product_edit', pid=p.id) }}" class="btn btn-sm btn-primary">编辑</a>
                     <!-- 修改后 -->
                     <form action="{{ url_for('delete_product', pid=p.id) }}" method="post" style="display: inline;">

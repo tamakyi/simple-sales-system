@@ -2,6 +2,8 @@
 {% block title %}分类管理{% endblock %}
 {% block content %}
 <h3>分类管理</h3>
+
+<!-- 添加分类表单 -->
 <form method="post" class="row g-2 align-items-center mb-3">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {{ form.hidden_tag() }}
@@ -14,20 +16,57 @@
     </div>
 </form>
 
+<!-- 批量操作区域 -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="selectAllBtn">全选</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="deselectAllBtn">取消全选</button>
+    </div>
+    <div>
+        <button type="button" id="batchDeleteBtn" class="btn btn-danger btn-sm">批量删除</button>
+    </div>
+</div>
+
 <div class="table-responsive">
     <table class="table table-bordered">
         <thead>
-            <tr><th>分类名</th><th>操作</th></tr>
+            <tr>
+                <th width="40px">
+                    <input type="checkbox" id="selectAll">
+                </th>
+                <th>分类名</th>
+                <th width="150px">操作</th>
+            </tr>
         </thead>
         <tbody>
             {% for c in categories %}
-            <tr>
-                <td>{{ c.name }}</td>
-                <td>
-                    <form action="{{ url_for('delete_category', cat_id=c.id) }}" method="post" style="display: inline;">
+            <tr id="category-row-{{ c.id }}">
+                <td data-label="选择" class="text-center align-middle">
+                    <input type="checkbox" name="category_ids" value="{{ c.id }}" class="category-checkbox">
+                </td>
+                <td data-label="分类名" class="align-middle text-left">
+                    <span class="category-name" id="category-name-{{ c.id }}">{{ c.name }}</span>
+                    <form method="post" action="{{ url_for('edit_category', cat_id=c.id) }}" 
+                          class="edit-form" id="edit-form-{{ c.id }}" style="display: none;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="input-group input-group-sm">
+                            <input type="text" name="name" value="{{ c.name }}" 
+                                   class="form-control form-control-sm" required>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-success btn-sm">保存</button>
+                                <button type="button" class="btn btn-secondary btn-sm cancel-edit" data-cat-id="{{ c.id }}">取消</button>
+                            </div>
+                        </div>
+                    </form>
+                </td>
+                <td data-label="操作" class="align-middle text-left">
+                    <button type="button" class="btn btn-warning btn-sm edit-btn" 
+                            data-cat-id="{{ c.id }}">编辑</button>
+                    <form action="{{ url_for('delete_category', cat_id=c.id) }}" method="post" 
+                          style="display: inline;" class="delete-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger btn-sm" 
-                            onclick="return confirm('确定删除该分类？')">删除</button>
+                                onclick="return confirm('确定删除该分类？')">删除</button>
                     </form>
                 </td>
             </tr>
@@ -35,4 +74,113 @@
         </tbody>
     </table>
 </div>
+
+<!-- 批量删除表单（隐藏） -->
+<form method="post" id="batchDeleteForm" action="{{ url_for('batch_categories') }}" style="display: none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="category_ids" id="batchCategoryIds">
+</form>
+
+<!-- 如果没有分类时显示提示 -->
+{% if not categories %}
+<div class="alert alert-info text-center">
+    暂无分类数据
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 全选/取消全选功能
+    const selectAll = document.getElementById('selectAll');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const deselectAllBtn = document.getElementById('deselectAllBtn');
+    const checkboxes = document.querySelectorAll('.category-checkbox');
+    
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+    
+    selectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        selectAll.checked = true;
+    });
+    
+    deselectAllBtn.addEventListener('click', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        selectAll.checked = false;
+    });
+    
+    // 编辑功能
+    const editButtons = document.querySelectorAll('.edit-btn');
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const catId = this.getAttribute('data-cat-id');
+            const nameSpan = document.getElementById('category-name-' + catId);
+            const editForm = document.getElementById('edit-form-' + catId);
+            const editBtn = this;
+            
+            // 隐藏显示的名称，显示编辑表单
+            nameSpan.style.display = 'none';
+            editForm.style.display = 'block';
+            editBtn.style.display = 'none';
+        });
+    });
+    
+    // 取消编辑
+    const cancelButtons = document.querySelectorAll('.cancel-edit');
+    cancelButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const catId = this.getAttribute('data-cat-id');
+            const nameSpan = document.getElementById('category-name-' + catId);
+            const editForm = document.getElementById('edit-form-' + catId);
+            const editBtn = document.querySelector('.edit-btn[data-cat-id="' + catId + '"]');
+            
+            // 显示名称，隐藏编辑表单
+            editForm.style.display = 'none';
+            nameSpan.style.display = 'inline';
+            editBtn.style.display = 'inline-block';
+        });
+    });
+    
+    // 批量删除功能
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    const batchDeleteForm = document.getElementById('batchDeleteForm');
+    const batchCategoryIds = document.getElementById('batchCategoryIds');
+    
+    batchDeleteBtn.addEventListener('click', function() {
+        const checkedBoxes = document.querySelectorAll('.category-checkbox:checked');
+        if (checkedBoxes.length === 0) {
+            alert('请至少选择一个分类进行删除');
+            return false;
+        }
+        
+        if (!confirm('确定删除选中的 ' + checkedBoxes.length + ' 个分类吗？')) {
+            return false;
+        }
+        
+        // 收集选中的分类ID
+        const categoryIds = Array.from(checkedBoxes).map(checkbox => checkbox.value).join(',');
+        batchCategoryIds.value = categoryIds;
+        
+        // 提交表单
+        batchDeleteForm.submit();
+    });
+});
+</script>
+
+<style>
+.edit-form .input-group {
+    width: 200px;
+}
+.category-checkbox {
+    cursor: pointer;
+}
+</style>
 {% endblock %}

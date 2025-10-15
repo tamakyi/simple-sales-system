@@ -26,9 +26,9 @@
                     <tbody>
                         {% for log in logs.items %}
                         <tr class="log-row">
-                            <td data-label="时间" class="align-middle">{{ log.ts.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td data-label="操作人" class="align-middle">{{ log.user.username }}</td>
-                            <td data-label="操作内容" class="align-middle">
+                            <td data-label="时间" class="align-middle  text-left">{{ log.ts.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td data-label="操作人" class="align-middle  text-left">{{ log.user.username }}</td>
+                            <td data-label="操作内容" class="align-middle  text-left">
                                 <div class="log-action-content">
                                     <div class="log-main-action">{{ log.action }}</div>
                                     {% if log.sale %}
@@ -39,7 +39,7 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td data-label="状态" class="align-middle">
+                            <td data-label="状态" class="align-middle  text-left">
                                 {% if log.sale and log.sale.is_reversed %}
                                 <span class="badge bg-danger">已撤回</span>
                                 {% elif log.sale %}
@@ -48,7 +48,7 @@
                                 <span class="badge bg-secondary">系统操作</span>
                                 {% endif %}
                             </td>
-                            <td data-label="操作" class="align-middle">
+                            <td data-label="操作" class="align-middle  text-left">
                                 {% if log.sale and not log.sale.is_reversed and (current_user.is_admin or current_user.id == log.user_id) %}
                                 <form method="post" action="{{ url_for('reverse_sale', sale_id=log.sale.id ) }}" 
                                       onsubmit="return confirm('确定要撤回此操作吗？撤回将恢复库存！');" class="d-inline">

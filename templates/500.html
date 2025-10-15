@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}服务器错误 - {{ app_title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h1 class="display-1 text-muted">500</h1>
+                <h3 class="card-title">服务器内部错误</h3>
+                <p class="text-muted">抱歉，服务器遇到了意外错误。</p>
+                <div class="mt-4">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">返回首页</a>
+                    <a href="javascript:history.back()" class="btn btn-secondary">返回上一页</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

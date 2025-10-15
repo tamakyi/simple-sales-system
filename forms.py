@@ -6,11 +6,13 @@ from flask_wtf.file import FileAllowed
 class LoginForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired()])
     password = PasswordField('密码', validators=[DataRequired()])
+    captcha = StringField('验证码', validators=[DataRequired(), Length(4, 4, message='验证码必须为4位')])
     submit = SubmitField('登录')
 
 class RegisterForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired(), Length(min=3)])
     password = PasswordField('密码', validators=[DataRequired(), Length(min=3)])
+    captcha = StringField('验证码', validators=[DataRequired(), Length(4, 4, message='验证码必须为4位')])
     submit = SubmitField('注册')
 
 class ProductForm(FlaskForm):
@@ -66,4 +68,8 @@ class UserApproveForm(FlaskForm):
         EqualTo('new_password', message='两次输入的密码不一致')
     ])
     
+    submit = SubmitField('保存')
+
+class CategoryEditForm(FlaskForm):
+    name = StringField('分类名', validators=[DataRequired()])
     submit = SubmitField('保存')

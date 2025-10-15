@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}页面未找到 - {{ app_title }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h1 class="display-1 text-muted">404</h1>
+                <h3 class="card-title">页面未找到</h3>
+                <p class="text-muted">抱歉，您访问的页面不存在。</p>
+                <div class="mt-4">
+                    <p>将在 <span id="countdown">5</span> 秒后自动跳转到首页</p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary mt-3">立即返回首页</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 倒计时跳转
+let seconds = 5;
+const countdownElement = document.getElementById('countdown');
+
+const countdown = setInterval(function() {
+    seconds--;
+    countdownElement.textContent = seconds;
+    
+    if (seconds <= 0) {
+        clearInterval(countdown);
+        window.location.href = "{{ url_for('dashboard') }}";
+    }
+}, 1000);
+</script>
+{% endblock %}
