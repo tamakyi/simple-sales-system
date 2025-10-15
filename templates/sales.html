@@ -55,16 +55,22 @@
                     <tr>
                         <td class="product-image-cell text-center">
                             {% if product.image %}
-                            <img src="{{ url_for('static', filename=product.image) }}" 
-                                 class="product-thumbnail" alt="{{ product.name }}"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div class="no-image-placeholder" style="display: none;">
-                                <span>无图片</span>
-                            </div>
+                                {% if product.image.startswith('http') %}
+                                    <img src="{{ product.image }}" 
+                                         class="product-thumbnail" alt="{{ product.name }}"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename=product.image) }}" 
+                                         class="product-thumbnail" alt="{{ product.name }}"
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                {% endif %}
+                                <div class="no-image-placeholder" style="display: none;">
+                                    <span>无图片</span>
+                                </div>
                             {% else %}
-                            <div class="no-image-placeholder">
-                                <span>无图片</span>
-                            </div>
+                                <div class="no-image-placeholder">
+                                    <span>无图片</span>
+                                </div>
                             {% endif %}
                         </td>
                         <td class="text-center">{{ product.name }}</td>

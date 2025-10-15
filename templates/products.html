@@ -65,9 +65,9 @@
                 <td data-label="图片">
                     {% if p.image %}
                         {% if p.image.startswith('http') %}
-                            <img src="{{ p.image }}" class="product-thumbnail">
+                            <img src="{{ p.image }}" class="product-thumbnail" alt="{{ p.name }}">
                         {% else %}
-                            <img src="{{ url_for('static', filename=p.image) }}" class="product-thumbnail">
+                            <img src="{{ url_for('static', filename=p.image) }}" class="product-thumbnail" alt="{{ p.name }}">
                         {% endif %}
                     {% else %}
                         <div class="no-image-placeholder">

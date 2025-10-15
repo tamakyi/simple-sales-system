@@ -21,7 +21,7 @@ class Product(db.Model):
     name = db.Column(db.String(128))
     stock = db.Column(db.Integer, default=0)
     price = db.Column(DECIMAL(10, 2))
-    image = db.Column(db.String(255))
+    image = db.Column(db.String(1024))
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     category = db.relationship('Category')
 

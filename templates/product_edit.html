@@ -24,7 +24,7 @@
         </div>
         <div class="col-12 col-md-6">
             {{ form.image_link.label }} 
-            {{ form.image_link(class="form-control") }}
+            {{ form.image_link(class="form-control", placeholder="支持外部图片链接") }}
         </div>
         <div class="col-12 col-md-6">
             {{ form.image.label }} 
@@ -34,6 +34,6 @@
             <button class="btn btn-success">{{ form.submit.label }}</button>
         </div>
     </div>
-    <small class="text-muted">图片链接和上传图片任选其一，均可为空</small>
+    <small class="text-muted">图片链接和上传图片任选其一，均可为空，外部链接请以 http:// 或 https:// 开头。</small>
 </form>
 {% endblock %}
