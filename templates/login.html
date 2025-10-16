@@ -21,7 +21,7 @@
                         <label class="form-label">{{ form.captcha.label }}</label>
                         <div class="row g-2 align-items-center">
                             <div class="col-7">
-                                {{ form.captcha(class="form-control", placeholder="输入验证码") }}
+                                {{ form.captcha(class="form-control", placeholder="输入验证码", id="captcha-input") }}
                             </div>
                             <div class="col-5">
                                 <img src="{{ url_for('captcha') }}" id="captcha-img" 
@@ -34,7 +34,8 @@
                     </div>
                     <button class="btn btn-primary w-100">{{ form.submit.label }}</button>
                     <div class="text-center mt-3">
-                        <a href="{{ url_for('register') }}">注册新账户</a>
+                        <a href="{{ url_for('register') }}">注册新账户</a> | 
+                        <a href="{{ url_for('forgot_password') }}">忘记密码？</a>
                     </div>
                 </form>
                 
@@ -51,7 +52,53 @@
 <script>
 function refreshCaptcha() {
     var captchaImg = document.getElementById('captcha-img');
+    var captchaInput = document.getElementById('captcha-input');
+    
+    // 刷新验证码图片
     captchaImg.src = "{{ url_for('captcha') }}?" + new Date().getTime();
+    
+    // 清空输入框
+    captchaInput.value = '';
+    
+    // 自动聚焦到输入框
+    setTimeout(function() {
+        captchaInput.focus();
+    }, 100);
 }
+
+// 页面加载时自动聚焦到验证码输入框（如果有错误）
+document.addEventListener('DOMContentLoaded', function() {
+    // 检查是否有错误消息，如果有则自动聚焦到验证码输入框
+    var alerts = document.querySelectorAll('.alert');
+    var hasError = false;
+    
+    alerts.forEach(function(alert) {
+        if (alert.textContent.includes('验证码错误') || 
+            alert.textContent.includes('用户名或密码错误') ||
+            alert.textContent.includes('登录失败') ||
+            alert.textContent.includes('账户未激活，请联系管理员')) {
+            hasError = true;
+        }
+    });
+    
+    if (hasError) {
+        var captchaInput = document.getElementById('captcha-input');
+        if (captchaInput) {
+            captchaInput.focus();
+            // 如果有错误，自动清空验证码输入框
+            captchaInput.value = '';
+        }
+    }
+});
+
+// 监听表单提交，如果有验证码错误，自动刷新验证码
+document.querySelector('form').addEventListener('submit', function(e) {
+    // 这里不需要阻止默认提交，只是添加一些处理逻辑
+    var captchaInput = document.getElementById('captcha-input');
+    if (captchaInput) {
+        // 将验证码转换为大写，避免大小写问题
+        captchaInput.value = captchaInput.value.toUpperCase();
+    }
+});
 </script>
 {% endblock %}

@@ -30,19 +30,18 @@
 ## 功能特色
 
 - 商品管理（增删改查，支持图片、批量导入）
-- 分类管理（新增批量删除的修改功能）
-- 进销存：商品表格展示，直接在行内录入进货/销售（针对移动端单独做优化，即简易进销存页面）
-- 销售流水、历史/今日销售、库存统计
+- 分类管理（增加批量管理）
+- 进销存：商品表格展示，直接在行内录入进货/销售（针对移动端单独做优化，即简化销售页面）
+- 销售流水、历史/今日销售、库存统计（单日修改为期间）
 - 销售排行榜、分类饼图、销售数据卡片
-- 用户权限（管理员/普通用户/审核）
+- 用户权限（管理员/普通用户/审核/忘记密码和邮箱绑定）
 - 操作日志
 - 导出销售报表（Excel）
 - 支持分页、搜索、图片外链或本地上传
-- 可选使用sql轻量化存储数据或使用mysql存储
+- ~~可选使用sql轻量化存储数据或使用mysql存储~~ 可选使用postgre轻量化存储数据或使用mysql存储，因为sqlite局限性停止维护
 - 网页公告
 - 背景图片
 - 网页跟踪脚本
-- 登录和注册验证
 ---
 
 ## 快速开始
@@ -55,10 +54,12 @@ pip install -r requirements.txt
 
 ### 2.复制.env.sample为.env并编辑
 ```
+APP_TITLE = '狼的小卖部 beta'
 UPLOAD_FOLDER = 'static/uploads' #图片上传路径
 SECRET_KEY = mysecretkey #安全密钥，建议替换
 SQLALCHEMY_DATABASE_URI = 'sqlite:///sales.db' # 使用SQLITE作为数据库时使用
-SQLALCHEMY_DATABASE_URI = mysql+pymysql://root:password@localhost:3306/test_sale # 使用MYSQL作为数据库时使用
+SQLALCHEMY_DATABASE_URI = mysql+pymysql://username:password@localhost:3306/database # 使用MYSQL作为数据库时使用
+SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost:5432/database
 MAX_CONTENT_LENGTH = 2097152 #最大上传大小，默认2M，即2*1024*1024
 PER_PAGE = 10 # 商品页面每页体现的商品数量
 BACKGROUND_IMAGE_URL=https://xxx.com/xxx.png # 默认背景图片地址
@@ -68,13 +69,19 @@ DASHBOARD_ANNOUNCEMENT="请注意：系统将于本周五晚进行维护，届�
 ANNOUNCEMENT_ENABLED=True  # 控制公告是否显示
 ANALYZE_SCRIPT="" #分析脚本，建议使用umami
 ANALYZE_ENABLE=True #开启分析脚本功能
+SMTP_SERVER=smtp.qq.com #smtp服务器地址，如不输入默认使用QQ邮箱
+SMTP_PORT=465 #SMTP端口，如调整TLS选项需注意一并调整
+SMTP_USERNAME=XXX@qq.com #发信邮箱地址
+SMTP_PASSWORD=XXXXXXXXXXXXXXX #密码或授权码
+SMTP_USE_TLS=False #是否启动TLS，如调整SMTP_PORT选项需注意一并调整
+FROM_EMAIL=XXX@qq.com #发信邮箱地址
 ```
 
 ### 2. 启动项目
 
 ```sh
 python app-mysql.py #使用mysql存储数据
-python app-sqlite.py #使用sqlite存储数据
+python app-postgre.py #使用postgre存储数据
 ```
 
 ### 3. 访问地址
@@ -126,6 +133,7 @@ python app-sqlite.py #使用sqlite存储数据
 - **图片404？** 请确保 `static/uploads/` 文件夹存在且有写权限。
 - **批量导入出错？** 请确保 CSV 列名和样例一致，编码为 UTF-8。
 - **注册后不能登录？** 管理员审核通过后方可激活。
+- **postgre无法自动创建数据库？** 正在查找问题，目前只能使用psql等工具手动新建数据库并授权。
 
 ---
 

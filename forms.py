@@ -1,19 +1,33 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, SelectField, FileField, BooleanField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, EqualTo
+from wtforms.validators import DataRequired, Length, NumberRange, Optional, EqualTo, Email
 from flask_wtf.file import FileAllowed
 
 class LoginForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired()])
     password = PasswordField('密码', validators=[DataRequired()])
-    captcha = StringField('验证码', validators=[DataRequired(), Length(4, 4, message='验证码必须为4位')])
+    captcha = StringField('验证码', validators=[DataRequired(), Length(5, 5, message='验证码必须为5位')])
     submit = SubmitField('登录')
 
 class RegisterForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired(), Length(min=3)])
     password = PasswordField('密码', validators=[DataRequired(), Length(min=3)])
-    captcha = StringField('验证码', validators=[DataRequired(), Length(4, 4, message='验证码必须为4位')])
+    email = StringField('邮箱', validators=[DataRequired(), Email()])
+    captcha = StringField('验证码', validators=[DataRequired(), Length(5, 5, message='验证码必须为5位')])
     submit = SubmitField('注册')
+
+class ForgotPasswordForm(FlaskForm):
+    email = StringField('注册邮箱', validators=[DataRequired(), Email()])
+    captcha = StringField('验证码', validators=[DataRequired(), Length(5, 5, message='验证码必须为5位')])
+    submit = SubmitField('发送重置邮件')
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('新密码', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('确认新密码', validators=[
+        DataRequired(),
+        EqualTo('password', message='两次输入的密码不一致')
+    ])
+    submit = SubmitField('重置密码')
 
 class ProductForm(FlaskForm):
     name = StringField('商品名', validators=[DataRequired()])
@@ -54,6 +68,7 @@ class CategoryForm(FlaskForm):
 
 class UserApproveForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired()])
+    email = StringField('邮箱', validators=[Optional(), Email()])
     is_active = BooleanField('激活账户')
     is_admin = BooleanField('管理员权限')
     

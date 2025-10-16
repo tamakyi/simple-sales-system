@@ -13,7 +13,6 @@ import openpyxl
 from io import BytesIO
 from sqlalchemy import func, desc
 from dotenv import load_dotenv
-import pymysql
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import create_engine, text
 from urllib.parse import urlparse
@@ -53,16 +52,24 @@ app.config['SMTP_PASSWORD'] = os.getenv('SMTP_PASSWORD', '')
 app.config['SMTP_USE_TLS'] = os.getenv('SMTP_USE_TLS', 'True').lower() == 'true'
 app.config['FROM_EMAIL'] = os.getenv('FROM_EMAIL', '')
 app.config['SECURITY_PASSWORD_SALT'] = os.getenv('SECURITY_PASSWORD_SALT', 'another-secret-salt')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'mysql+pymysql://username:password@localhost:3306/your_database_name')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'postgresql://username:password@localhost:5432/your_database_name')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ECHO'] = False
-app.config['SQLALCHEMY_POOL_SIZE'] = 20
-app.config['SQLALCHEMY_POOL_RECYCLE'] = 3600
 app.config['DASHBOARD_ANNOUNCEMENT'] = os.getenv('DASHBOARD_ANNOUNCEMENT', '')
 app.config['ANNOUNCEMENT_ENABLED'] = os.getenv('ANNOUNCEMENT_ENABLED', 'False').lower() == 'true'
 app.config['ANALYZE_SCRIPT'] = os.getenv('ANALYZE_SCRIPT', '')
 app.config['ANALYZE_ENABLE'] = os.getenv('ANALYZE_ENABLE', 'False').lower() == 'true'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 10,
+    'max_overflow': 20,
+    'pool_recycle': 3600,
+    'pool_pre_ping': True,
+    'connect_args': {
+        'connect_timeout': 10,
+        'application_name': 'sss_postgre'
+    }
+}
 
 db.init_app(app)
 register_attempts = {}
@@ -258,6 +265,62 @@ def send_reset_email(user):
         traceback.print_exc()
         return False
 
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """忘记密码页面"""
+    form = ForgotPasswordForm()
+    
+    if form.validate_on_submit():
+        # 检查验证码
+        if 'captcha' not in session or session['captcha'].upper() != form.captcha.data.upper():
+            flash('验证码错误')
+            return render_template('forgot_password.html', form=form)
+        
+        # 查找用户
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and user.is_active:
+            if send_reset_email(user):
+                flash('密码重置邮件已发送，请检查您的邮箱。', 'success')
+                # 清除验证码session
+                session.pop('captcha', None)
+                return redirect(url_for('login'))
+            else:
+                flash('发送邮件失败，请稍后重试。', 'error')
+        else:
+            flash('该邮箱未注册或账户未激活。', 'error')
+    
+    return render_template('forgot_password.html', form=form)
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """重置密码页面"""
+    # 验证令牌
+    email = verify_reset_token(token)
+    if not email:
+        flash('重置链接无效或已过期。', 'error')
+        return redirect(url_for('forgot_password'))
+    
+    # 查找用户
+    user = User.query.filter_by(email=email).first()
+    if not user or not user.is_active:
+        flash('用户不存在或账户未激活。', 'error')
+        return redirect(url_for('forgot_password'))
+    
+    form = ResetPasswordForm()
+    
+    if form.validate_on_submit():
+        try:
+            # 更新密码
+            user.password = generate_password_hash(form.password.data)
+            db.session.commit()
+            
+            flash('密码重置成功，请使用新密码登录。', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'重置密码失败: {str(e)}', 'error')
+    
+    return render_template('reset_password.html', form=form, token=token)
 
 def get_redirect_url(target, default_params=None):
     if default_params is None:
@@ -276,50 +339,81 @@ def get_redirect_url(target, default_params=None):
 
 def create_database_if_not_exists():
     """
-    检查配置中的MySQL数据库是否存在，若不存在则自动创建。
-    注意：此函数仅处理MySQL数据库，且连接MySQL的用户需有创建数据库的权限。
+    检查配置中的PostgreSQL数据库是否存在，若不存在则自动创建。
     """
-    # 获取配置中的数据库URI
     database_uri = app.config['SQLALCHEMY_DATABASE_URI']
-    # 解析URI，提取信息
     parsed_uri = urlparse(database_uri)
     db_name = parsed_uri.path.lstrip('/')
     db_user = parsed_uri.username
     db_password = parsed_uri.password
     db_host = parsed_uri.hostname
-    db_port = parsed_uri.port if parsed_uri.port else 3306  # MySQL默认端口
+    db_port = parsed_uri.port if parsed_uri.port else 5432
 
-    # 构建一个不指定数据库的URI，用于连接到MySQL服务器实例
-    base_uri = f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/"
+    print(f"检查数据库: {db_name}")
 
     try:
-        # 1. 尝试连接目标数据库
+        # 1. 首先尝试连接目标数据库
+        print(f"尝试连接目标数据库: {db_name}")
         test_engine = create_engine(database_uri)
         with test_engine.connect() as conn:
             print(f"数据库 '{db_name}' 已存在，直接使用。")
         return True
     except Exception as e:
-        # 2. 如果连接失败，且错误原因是数据库不存在（通常错误码包含1049）
-        if "1049" in str(e):
+        error_msg = str(e).lower()
+        print(f"连接目标数据库失败: {error_msg}")
+        
+        # 检查是否是数据库不存在的错误
+        if any(pattern in error_msg for pattern in ['database', 'does not exist', '不存在']):
             print(f"数据库 '{db_name}' 不存在，尝试创建...")
             try:
-                # 连接到MySQL服务器（不指定具体数据库）
+                # 构建连接到postgres系统数据库的URI
+                if db_password:
+                    base_uri = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/postgres"
+                else:
+                    base_uri = f"postgresql://{db_user}@{db_host}:{db_port}/postgres"
+                
+                print(f"使用基础连接: postgresql://{db_user}:****@{db_host}:{db_port}/postgres")
+                
+                # 连接到PostgreSQL服务器（使用postgres数据库）
                 base_engine = create_engine(base_uri)
                 with base_engine.connect() as conn:
-                    # 执行CREATE DATABASE语句，推荐使用utf8mb4字符集
-                    conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"))
-                    conn.commit()  # 确保执行
+                    # 检查数据库是否已经存在（可能在其他会话中创建了）
+                    result = conn.execute(text("SELECT 1 FROM pg_database WHERE datname = :db_name"), 
+                                         {'db_name': db_name})
+                    exists = result.scalar() is not None
+                    
+                    if exists:
+                        print(f"数据库 '{db_name}' 已存在（在其他会话中创建）。")
+                        return True
+                    
+                    # 执行CREATE DATABASE语句
+                    print(f"正在创建数据库: {db_name}")
+                    conn.execute(text(f"CREATE DATABASE {db_name};"))
+                    conn.commit()
+                
                 print(f"数据库 '{db_name}' 创建成功。")
+                
+                # 验证新创建的数据库
+                print("验证新创建的数据库...")
+                test_engine = create_engine(database_uri)
+                with test_engine.connect() as conn:
+                    print(f"数据库 '{db_name}' 验证成功。")
+                
                 return True
             except Exception as create_error:
                 print(f"创建数据库失败: {create_error}")
-                # 检查是否是权限问题
-                if "1044" in str(create_error):
-                    print("错误原因：当前数据库用户可能没有创建数据库的权限。")
+                print("请确保：")
+                print("1. PostgreSQL服务正在运行")
+                print("2. 数据库用户有创建数据库的权限")
+                print("3. 连接信息正确")
                 return False
         else:
-            # 其他连接错误，例如密码错误、主机无法访问等
+            # 其他连接错误（权限、网络、认证等）
             print(f"数据库连接错误: {e}")
+            print("请检查：")
+            print("1. PostgreSQL服务是否启动")
+            print("2. 数据库连接信息是否正确")
+            print("3. 网络连接是否正常")
             return False
 
 def log_action(user, action, sale=None):
@@ -406,6 +500,9 @@ def dashboard():
     
     # 获取选定日期范围
     selected_start, selected_end = get_date_range(start_date, end_date)
+    
+    # 获取前一天的日期（用于前一天按钮，现在不需要了）
+    # prev_date = selected_date - dt.timedelta(days=1)
     
     # 获取今天的日期范围
     today_start, today_end = get_date_range(today, today)
@@ -683,68 +780,45 @@ def register():
     
     return render_template('register.html', form=form)
 
-@app.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    """忘记密码页面"""
-    form = ForgotPasswordForm()
-    
-    if form.validate_on_submit():
-        # 检查验证码
-        if 'captcha' not in session or session['captcha'].upper() != form.captcha.data.upper():
-            flash('验证码错误')
-            return render_template('forgot_password.html', form=form)
-        
-        # 查找用户
-        user = User.query.filter_by(email=form.email.data).first()
-        if user and user.is_active:
-            if send_reset_email(user):
-                flash('密码重置邮件已发送，请检查您的邮箱。', 'success')
-                # 清除验证码session
-                session.pop('captcha', None)
-                return redirect(url_for('login'))
-            else:
-                flash('发送邮件失败，请稍后重试。', 'error')
-        else:
-            flash('该邮箱未注册或账户未激活。', 'error')
-    
-    return render_template('forgot_password.html', form=form)
-
-@app.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
-    """重置密码页面"""
-    # 验证令牌
-    email = verify_reset_token(token)
-    if not email:
-        flash('重置链接无效或已过期。', 'error')
-        return redirect(url_for('forgot_password'))
-    
-    # 查找用户
-    user = User.query.filter_by(email=email).first()
-    if not user or not user.is_active:
-        flash('用户不存在或账户未激活。', 'error')
-        return redirect(url_for('forgot_password'))
-    
-    form = ResetPasswordForm()
-    
-    if form.validate_on_submit():
-        try:
-            # 更新密码
-            user.password = generate_password_hash(form.password.data)
-            db.session.commit()
-            
-            flash('密码重置成功，请使用新密码登录。', 'success')
-            return redirect(url_for('login'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'重置密码失败: {str(e)}', 'error')
-    
-    return render_template('reset_password.html', form=form, token=token)
-
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+@app.route('/debug/email-test')
+def debug_email_test():
+    """邮件配置测试页面（仅在调试模式下可用）"""
+    if not app.debug:
+        abort(404)
+    
+    return render_template('email_test.html')
+
+@app.route('/debug/send-test-email', methods=['POST'])
+def debug_send_test_email():
+    """发送测试邮件（仅在调试模式下可用）"""
+    if not app.debug:
+        abort(404)
+    
+    email = request.form.get('email')
+    if not email:
+        return jsonify({'success': False, 'message': '请输入邮箱地址'})
+    
+    # 创建一个虚拟用户用于测试
+    class TestUser:
+        def __init__(self, username, email):
+            self.username = username
+            self.email = email
+    
+    test_user = TestUser("测试用户", email)
+    
+    # 使用修改后的发送函数
+    success = send_reset_email(test_user)
+    
+    if success:
+        return jsonify({'success': True, 'message': '测试邮件发送成功！'})
+    else:
+        return jsonify({'success': False, 'message': '测试邮件发送失败，请查看控制台日志'})
 
 @app.route('/products')
 @login_required
@@ -1452,39 +1526,79 @@ def migrate_log_sale_relations():
 
 if __name__ == '__main__':
     with app.app_context():
-        if app.config['SQLALCHEMY_DATABASE_URI'].startswith('mysql'):
-          if not create_database_if_not_exists():
-                print("数据库初始化失败，应用无法启动。")
-                exit(1)
-        db.create_all()
+        # 检查是否需要创建数据库
+        db_initialized = False
+        max_retries = 3
+        retry_count = 0
+
+        if not check_database_health():
+            print("警告: 数据库连接存在问题，应用可能无法正常工作。")
+        
+        while not db_initialized and retry_count < max_retries:
+            if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgresql'):
+                db_initialized = create_database_if_not_exists()
+            else:
+                # 对于其他数据库类型，直接尝试连接
+                db_initialized = True
+            
+            if not db_initialized:
+                retry_count += 1
+                if retry_count < max_retries:
+                    print(f"数据库初始化失败，第 {retry_count} 次重试...")
+                    import time
+                    time.sleep(2)  # 等待2秒后重试
+                else:
+                    print("数据库初始化失败，应用无法启动。")
+                    print("请手动创建数据库或检查数据库配置。")
+                    exit(1)
+        
+        # 创建所有表
+        try:
+            print("创建数据库表...")
+            db.create_all()
+            print("数据库表创建完成。")
+        except Exception as e:
+            print(f"创建数据库表失败: {e}")
+            print("请检查数据库连接和权限。")
+            exit(1)
 
         # 确保至少有一个活跃的管理员账户
-        active_admin_exists = User.query.filter_by(is_admin=True, is_active=True).first()
-        if not active_admin_exists:
-            # 尝试查找名为'admin'的用户
-            admin_user = User.query.filter_by(username='admin').first()
-            if admin_user:
-                # 如果找到，确保它是活跃的管理员
-                admin_user.is_admin = True
-                admin_user.is_active = True
-                print(f"已将用户 '{admin_user.username}' 设置为活跃管理员")
-            else:
-                # 如果没有找到，创建新的默认管理员账户
-                admin = User(
-                    username='admin', 
-                    password=generate_password_hash('admin'), 
-                    is_admin=True, 
-                    is_active=True
-                )
-                db.session.add(admin)
-                print("创建了默认管理员账户: admin/admin")
-            db.session.commit()
+        try:
+            active_admin_exists = User.query.filter_by(is_admin=True, is_active=True).first()
+            if not active_admin_exists:
+                # 尝试查找名为'admin'的用户
+                admin_user = User.query.filter_by(username='admin').first()
+                if admin_user:
+                    # 如果找到，确保它是活跃的管理员
+                    admin_user.is_admin = True
+                    admin_user.is_active = True
+                    db.session.commit()
+                    print(f"已将用户 '{admin_user.username}' 设置为活跃管理员")
+                else:
+                    # 如果没有找到，创建新的默认管理员账户
+                    admin = User(
+                        username='admin', 
+                        password=generate_password_hash('admin'), 
+                        is_admin=True, 
+                        is_active=True
+                    )
+                    db.session.add(admin)
+                    db.session.commit()
+                    print("创建了默认管理员账户: admin/admin")
+        except Exception as e:
+            print(f"初始化管理员账户失败: {e}")
+            # 继续启动，因为管理员账户不是绝对必要的
         
         # 确保存在默认分类
-        if not Category.query.first():
-            default_category = Category(name="未分类")
-            db.session.add(default_category)
-            db.session.commit()
-            print("创建了默认分类: 未分类")
-
+        try:
+            if not Category.query.first():
+                default_category = Category(name="未分类")
+                db.session.add(default_category)
+                db.session.commit()
+                print("创建了默认分类: 未分类")
+        except Exception as e:
+            print(f"初始化默认分类失败: {e}")
+        
+        print("应用启动完成。")
+    
     app.run(debug=True)

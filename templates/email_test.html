@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}邮件配置测试{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">邮件配置测试</h3>
+                
+                <div class="mb-3">
+                    <h5>当前SMTP配置：</h5>
+                    <ul>
+                        <li>服务器: {{ config.SMTP_SERVER }}:{{ config.SMTP_PORT }}</li>
+                        <li>用户名: {{ config.SMTP_USERNAME }}</li>
+                        <li>使用TLS: {{ config.SMTP_USE_TLS }}</li>
+                        <li>发件人: {{ config.FROM_EMAIL }}</li>
+                    </ul>
+                </div>
+                
+                <form id="testEmailForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">测试邮箱地址</label>
+                        <input type="email" class="form-control" id="email" name="email" required 
+                               placeholder="输入接收测试邮件的邮箱地址">
+                    </div>
+                    <button type="submit" class="btn btn-primary">发送测试邮件</button>
+                </form>
+                
+                <div id="result" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('testEmailForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const resultDiv = document.getElementById('result');
+    
+    resultDiv.innerHTML = '<div class="alert alert-info">正在发送测试邮件...</div>';
+    
+    fetch('/debug/send-test-email', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger">请求失败: ' + error + '</div>';
+    });
+});
+</script>
+{% endblock %}

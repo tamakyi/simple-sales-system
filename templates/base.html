@@ -17,6 +17,15 @@
             --bg-size: {{ background_size }};
         }
         {% endif %}
+        
+        /* 消息自动消失动画 */
+        .alert-auto-dismiss {
+            transition: opacity 0.5s ease-in-out;
+        }
+        
+        .alert-fade-out {
+            opacity: 0;
+        }
     </style>
     {% block head %}{% endblock %}
 </head>
@@ -52,7 +61,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
-          <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+          <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show alert-auto-dismiss" role="alert" data-auto-dismiss="5000">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>
@@ -62,5 +71,88 @@
     {% block content %}{% endblock %}
 </div>
 <script src="https://cdnjs.snrat.com/ajax/libs/bootstrap/5.3.7/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// 消息自动消失功能
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取所有需要自动消失的消息
+    const autoDismissAlerts = document.querySelectorAll('.alert-auto-dismiss[data-auto-dismiss]');
+    
+    autoDismissAlerts.forEach(function(alert) {
+        const dismissTime = parseInt(alert.getAttribute('data-auto-dismiss'));
+        
+        // 设置定时器，在指定时间后消失
+        setTimeout(function() {
+            // 添加淡出动画类
+            alert.classList.add('alert-fade-out');
+            
+            // 动画结束后移除元素
+            setTimeout(function() {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 500); // 等待淡出动画完成
+        }, dismissTime);
+    });
+    
+    // 为所有消息添加点击关闭功能（增强用户体验）
+    const allAlerts = document.querySelectorAll('.alert');
+    allAlerts.forEach(function(alert) {
+        alert.addEventListener('click', function() {
+            this.classList.add('alert-fade-out');
+            setTimeout(() => {
+                if (this.parentNode) {
+                    this.parentNode.removeChild(this);
+                }
+            }, 500);
+        });
+    });
+});
+
+// 可选：添加全局消息控制函数
+window.dismissAlert = function(alertElement) {
+    if (alertElement) {
+        alertElement.classList.add('alert-fade-out');
+        setTimeout(() => {
+            if (alertElement.parentNode) {
+                alertElement.parentNode.removeChild(alertElement);
+            }
+        }, 500);
+    }
+};
+
+// 可选：添加手动显示消息的函数（用于动态添加消息）
+window.showFlashMessage = function(message, category = 'success', autoDismiss = true) {
+    const alertClass = category === 'error' ? 'alert-danger' : 'alert-success';
+    const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show alert-auto-dismiss" role="alert" ${autoDismiss ? 'data-auto-dismiss="5000"' : ''}>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    
+    const container = document.querySelector('.container.mt-3');
+    if (container) {
+        // 在现有消息之后插入新消息
+        const existingAlerts = container.querySelectorAll('.alert');
+        if (existingAlerts.length > 0) {
+            existingAlerts[existingAlerts.length - 1].insertAdjacentHTML('afterend', alertHtml);
+        } else {
+            container.insertAdjacentHTML('afterbegin', alertHtml);
+        }
+        
+        // 如果启用了自动消失，设置定时器
+        if (autoDismiss) {
+            setTimeout(() => {
+                const newAlert = container.querySelector('.alert:last-child');
+                if (newAlert) {
+                    dismissAlert(newAlert);
+                }
+            }, 5000);
+        }
+    }
+};
+</script>
+
 </body>
 </html>
