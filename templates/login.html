@@ -18,15 +18,15 @@
                         {{ form.password(class="form-control") }}
                     </div>
                     <div class="mb-3">
-                        <div class="row align-items-center">
+                        <label class="form-label">{{ form.captcha.label }}</label>
+                        <div class="row g-2 align-items-center">
                             <div class="col-7">
-                                {{ form.captcha.label }}
                                 {{ form.captcha(class="form-control", placeholder="输入验证码") }}
                             </div>
                             <div class="col-5">
                                 <img src="{{ url_for('captcha') }}" id="captcha-img" 
                                      class="img-fluid border rounded" 
-                                     style="cursor: pointer; height: 38px;" 
+                                     style="cursor: pointer; height: 38px; width: 100%; object-fit: cover;" 
                                      onclick="refreshCaptcha()" 
                                      title="点击刷新验证码">
                             </div>

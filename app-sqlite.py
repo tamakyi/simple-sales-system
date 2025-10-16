@@ -267,27 +267,33 @@ def captcha():
     from PIL import Image, ImageDraw, ImageFont
     import os
     
-    # 生成4位随机验证码
-    captcha_text = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    captcha_text = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
     session['captcha'] = captcha_text
     
-    # 创建图片
-    width, height = 120, 40
+    width, height = 180, 38
     image = Image.new('RGB', (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(image)
     
     try:
-        # 尝试使用系统字体
+        # 使用合适的字体大小
         font = ImageFont.truetype("arial.ttf", 24)
     except:
-        #  fallback 到默认字体
-        font = ImageFont.load_default()
+        try:
+            font = ImageFont.truetype("/usr/share/fonts/truetype/Arial.ttf", 24) #自己找这个字体，我是去pip包的资源里扒的
+        except:
+            try:
+                font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 24)
+            except:
+                font = ImageFont.load_default()
     
-    # 绘制验证码文字
+    text_width = len(captcha_text) * 22
+    start_x = (width - text_width) // 2
+    
     for i, char in enumerate(captcha_text):
-        draw.text((10 + i * 28, 8), char, fill=(0, 0, 0), font=font)
+        y_position = (height - 24) // 2
+        draw.text((start_x + i * 26, y_position), char, fill=(0, 0, 0), font=font)
     
-    # 添加干扰线
+    # 添加少量干扰线
     for i in range(5):
         x1 = random.randint(0, width)
         y1 = random.randint(0, height)
@@ -295,8 +301,8 @@ def captcha():
         y2 = random.randint(0, height)
         draw.line((x1, y1, x2, y2), fill=(180, 180, 180), width=1)
     
-    # 添加噪点
-    for i in range(100):
+    # 添加少量噪点
+    for i in range(30):
         x = random.randint(0, width)
         y = random.randint(0, height)
         draw.point((x, y), fill=(200, 200, 200))
@@ -349,6 +355,8 @@ def record_login_attempt(username, success):
         if attempts >= 5:
             lock_time = datetime.now() + timedelta(minutes=10)
             login_attempts[username] = [attempts, lock_time]
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
