@@ -1,6 +1,10 @@
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/wolf_sales.webp)
 <p align="center"> 狼的小卖部 - 基于Python的简单网页端进销存/销售管理系统</p>
 
+
+## Demo
+浏览器打开 [此处Demo/](http://lnmp-5000.337845818.best/)
+
 ## 截图
  - 主界面
 ![image](https://github.com/tamakyi/simple-sales-system/blob/main/screenshot/dashboard.png)
