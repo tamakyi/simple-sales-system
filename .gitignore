@@ -1,3 +1,25 @@
-# Dependency directories (remove the comment below to include it)
-static/uploads
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境
+.venv/
+venv/
+
+# 环境变量与密钥
 .env
+
+# 运行时数据（本地数据库、上传文件）
+instance/
+*.db
+*.sqlite3
+static/uploads
+
+# 本地工作产物（仅本地留存，不上传）
+.workbuddy/
+workbuddy/
+tests/
+CODE_REVIEW.md
+CHANGELOG-2026-09-14.md

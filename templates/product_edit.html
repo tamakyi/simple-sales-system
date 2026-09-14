@@ -19,6 +19,11 @@
             {{ form.stock(class="form-control") }}
         </div>
         <div class="col-12 col-md-6">
+            {{ form.low_stock_threshold.label }} 
+            {{ form.low_stock_threshold(class="form-control", placeholder="留空则用默认阈值") }}
+            <div class="form-text">库存降到该值及以下时在仪表盘提示待补货</div>
+        </div>
+        <div class="col-12 col-md-6">
             {{ form.category.label }} 
             {{ form.category(class="form-select") }}
         </div>

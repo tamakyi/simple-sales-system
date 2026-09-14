@@ -8,9 +8,13 @@
                 <h5 class="card-title mb-0">批量导入商品 (CSV)</h5>
             </div>
             <div class="card-body">
-                <p class="card-text">请上传CSV文件，列名：商品名、单价、库存、分类</p>
+                <p class="card-text">请上传CSV文件，列名：商品名、单价、库存、分类、图片链接(可选)</p>
+                <p class="card-text text-muted small">
+                    模板自带 3 行示例数据，请先替换为真实商品再导入，否则会被当成真实商品建出来。<br>
+                    用 Excel 编辑后请另存为「CSV UTF-8 (逗号分隔)」，否则中文表头会乱码。
+                </p>
                 <div class="mb-3">
-                    <a href="{{ url_for('download_import_template') }}" class="btn btn-outline-info btn-sm">
+                    <a href="{{ url_for('download_import_template') }}" class="btn btn-outline-info">
                         <i class="bi bi-download"></i> 下载CSV模板
                     </a>
                 </div>
@@ -48,6 +52,10 @@
                         <div class="col-12 col-md-6">
                             {{ manual_form.stock.label }} 
                             {{ manual_form.stock(class="form-control") }}
+                        </div>
+                        <div class="col-12 col-md-6">
+                            {{ manual_form.low_stock_threshold.label }} 
+                            {{ manual_form.low_stock_threshold(class="form-control", placeholder="留空则用默认阈值") }}
                         </div>
                         <div class="col-12">
                             {{ manual_form.category.label }} 
@@ -87,15 +95,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const price = document.getElementById('{{ manual_form.price.id }}').value;
             const stock = document.getElementById('{{ manual_form.stock.id }}').value;
             
-            if (!name || !price || !stock) {
+            // 与表单校验器同口径：只判「空」与「负」，不把 0 当未填写。
+            // 原先用 !stock 判定，服务端已允许库存 0，这里却会拦下，两边结论不一。
+            if (!name || price === '' || stock === '') {
                 e.preventDefault();
                 alert('请填写必填字段：商品名、单价和库存');
                 return false;
             }
             
-            if (price <= 0) {
+            if (price < 0) {
                 e.preventDefault();
-                alert('单价必须大于0');
+                alert('单价不能为负数');
                 return false;
             }
             

@@ -1,0 +1,62 @@
+{# 跨模板共用的 UI 片段。
+   导入时必须写 `with context`——分页宏依赖 app.py 注入的 page_url()。 #}
+
+
+{# 商品缩略图。image 为空、或图片加载失败时都退化为「无图片」占位块。
+   cls / ph_cls 用于适配表格内（product-thumbnail）与卡片内（*-simple）两套样式。 #}
+{% macro product_thumb(image, name, cls='product-thumbnail', ph_cls='no-image-placeholder') -%}
+{% if image %}
+{% if image.startswith('http') %}
+<img src="{{ image }}" class="{{ cls }}" alt="{{ name }}"
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+{% else %}
+<img src="{{ url_for('static', filename=image) }}" class="{{ cls }}" alt="{{ name }}"
+     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+{% endif %}
+<div class="{{ ph_cls }}" style="display: none;"><span>无图片</span></div>
+{% else %}
+<div class="{{ ph_cls }}"><span>无图片</span></div>
+{% endif %}
+{%- endmacro %}
+
+
+{# 库存显示。颜色与文案由 Product.stock_level 决定（阈值判定只在那里实现），
+   本宏不再自行比较阈值——原先销售页硬编码了 10，其余页面完全不判定。
+   正常库存只输出数字，异常才给徽章，避免整张表挂满彩色块。 #}
+{% macro stock_badge(product) -%}
+{% set level = product.stock_level %}
+{% if level == 'ok' %}
+<span class="stock-ok">{{ product.effective_stock }}</span>
+{% elif level == 'low' %}
+<span class="badge stock-badge stock-low" title="库存偏低（预警阈值 {{ product.effective_threshold }}）">{{ product.effective_stock }}</span>
+{% elif level == 'out' %}
+<span class="badge stock-badge stock-out" title="已断货">0</span>
+{% else %}
+<span class="badge stock-badge stock-negative" title="库存为负，数据异常，请核对流水">{{ product.effective_stock }}</span>
+{% endif %}
+{%- endmacro %}
+
+
+{# 分页导航。href 由 page_url() 生成：保留当前查询串（筛选、日期区间），只替换 page。
+   原先每个模板各写一套 url_for 显式传参或手拼查询串，是口径不一致的来源。 #}
+{% macro pagination(pager) -%}
+{% if pager.pages > 1 %}
+<nav aria-label="Page navigation" class="mt-3">
+    <ul class="pagination justify-content-center">
+        {%- if pager.has_prev %}
+        <li class="page-item"><a class="page-link" href="{{ page_url(pager.prev_num) }}">上一页</a></li>
+        {%- endif %}
+        {%- for page_num in pager.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {%- if page_num %}
+        <li class="page-item {% if page_num == pager.page %}active{% endif %}"><a class="page-link" href="{{ page_url(page_num) }}">{{ page_num }}</a></li>
+        {%- else %}
+        <li class="page-item disabled"><span class="page-link">...</span></li>
+        {%- endif %}
+        {%- endfor %}
+        {%- if pager.has_next %}
+        <li class="page-item"><a class="page-link" href="{{ page_url(pager.next_num) }}">下一页</a></li>
+        {%- endif %}
+    </ul>
+</nav>
+{% endif %}
+{%- endmacro %}

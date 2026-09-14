@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+{% block title %}回收站{% endblock %}
+{% block content %}
+<h3>回收站</h3>
+<p class="text-muted">
+    删除的商品与用户会保留在这里，其历史销售流水与操作日志不受影响。勾选后可随时还原。
+</p>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">已删除商品（{{ deleted_products|length }}）</h5>
+        {% if deleted_products %}
+        <form method="post" action="{{ url_for('recycle_bin_restore') }}" class="restore-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="kind" value="product">
+            <input type="hidden" name="ids" class="restore-ids" value="">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input class="form-check-input" type="checkbox" data-select-all>
+                        </th>
+                        <th>ID</th>
+                        <th>商品名</th>
+                        <th>库存</th>
+                        <th>单价</th>
+                        <th>删除时间</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for p in deleted_products %}
+                    <tr>
+                        <td><input class="form-check-input" type="checkbox" data-id="{{ p.id }}"></td>
+                        <td>{{ p.id }}</td>
+                        <td>{{ p.name }}</td>
+                        <td>{{ p.stock }}</td>
+                        <td>{{ p.price|round(2) }}</td>
+                        <td>{{ p.deleted_at|dateformat('%Y-%m-%d %H:%M') if p.deleted_at else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" data-restore-btn disabled>还原选中</button>
+        </form>
+        {% else %}
+        <p class="text-muted mb-0">暂无已删除的商品。</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">已删除用户（{{ deleted_users|length }}）</h5>
+        {% if deleted_users %}
+        <p class="text-muted small mb-2">还原后的用户处于「未启用」状态，需在用户管理中启用后才能登录。</p>
+        <form method="post" action="{{ url_for('recycle_bin_restore') }}" class="restore-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="kind" value="user">
+            <input type="hidden" name="ids" class="restore-ids" value="">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <input class="form-check-input" type="checkbox" data-select-all>
+                        </th>
+                        <th>ID</th>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>删除时间</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for u in deleted_users %}
+                    <tr>
+                        <td><input class="form-check-input" type="checkbox" data-id="{{ u.id }}"></td>
+                        <td>{{ u.id }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.email or '—' }}</td>
+                        <td>{{ u.deleted_at|dateformat('%Y-%m-%d %H:%M') if u.deleted_at else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" data-restore-btn disabled>还原选中</button>
+        </form>
+        {% else %}
+        <p class="text-muted mb-0">暂无已删除的用户。</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.restore-form').forEach(function (form) {
+    var boxes = form.querySelectorAll('input[type="checkbox"][data-id]');
+    var selectAll = form.querySelector('input[data-select-all]');
+    var idsInput = form.querySelector('.restore-ids');
+    var button = form.querySelector('button[data-restore-btn]');
+
+    function sync() {
+        var ids = [];
+        boxes.forEach(function (box) {
+            if (box.checked) { ids.push(box.dataset.id); }
+        });
+        idsInput.value = ids.join(',');
+        button.disabled = ids.length === 0;
+        button.textContent = ids.length ? ('还原选中 ' + ids.length + ' 项') : '还原选中';
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            boxes.forEach(function (box) { box.checked = selectAll.checked; });
+            sync();
+        });
+    }
+    boxes.forEach(function (box) { box.addEventListener('change', sync); });
+    sync();
+});
+</script>
+{% endblock %}

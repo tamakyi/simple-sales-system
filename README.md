@@ -42,7 +42,8 @@
 - 操作日志
 - 导出销售报表（Excel）
 - 支持分页、搜索、图片外链或本地上传
-- ~~可选使用sql轻量化存储数据或使用mysql存储~~ 可选使用postgre轻量化存储数据或使用mysql存储，因为sqlite局限性停止维护
+- 数据库支持 MySQL 或 PostgreSQL，入口统一为 `app.py`，由 `.env` 的 `DB_TYPE` 指定（sqlite 分支已移除）
+- 回收站：软删除的商品与用户可查看并还原
 - 网页公告
 - 背景图片
 - 网页跟踪脚本
@@ -57,36 +58,31 @@ pip install -r requirements.txt
 ```
 
 ### 2.复制.env.sample为.env并编辑
+完整可配置项与逐项说明见 `.env.sample`，复制为 `.env` 后按注释修改即可。最需要留意的是数据库这一段：
+
+```ini
+# 二选一：mysql 或 postgres
+DB_TYPE = mysql
+SQLALCHEMY_DATABASE_URI = mysql+pymysql://username:password@localhost:3306/database
+# DB_TYPE = postgres
+# SQLALCHEMY_DATABASE_URI = postgresql://username:password@localhost:5432/database
 ```
-APP_TITLE = '狼的小卖部 beta'
-UPLOAD_FOLDER = 'static/uploads' #图片上传路径
-SECRET_KEY = mysecretkey #安全密钥，建议替换
-SQLALCHEMY_DATABASE_URI = 'sqlite:///sales.db' # 使用SQLITE作为数据库时使用
-SQLALCHEMY_DATABASE_URI = mysql+pymysql://username:password@localhost:3306/database # 使用MYSQL作为数据库时使用
-SQLALCHEMY_DATABASE_URI=postgresql://username:password@localhost:5432/database
-MAX_CONTENT_LENGTH = 2097152 #最大上传大小，默认2M，即2*1024*1024
-PER_PAGE = 10 # 商品页面每页体现的商品数量
-BACKGROUND_IMAGE_URL=https://xxx.com/xxx.png # 默认背景图片地址
-BACKGROUND_OPACITY=0.1 # 背景图片不透明度，范围0-1，越接近0越透明。
-BACKGROUND_SIZE=cover #背景图片尺寸，默认cover即可，详情查看web css中关于background_size的参数说明。
-DASHBOARD_ANNOUNCEMENT="请注意：系统将于本周五晚进行维护，届时可能无法访问。"
-ANNOUNCEMENT_ENABLED=True  # 控制公告是否显示
-ANALYZE_SCRIPT="" #分析脚本，建议使用umami
-ANALYZE_ENABLE=True #开启分析脚本功能
-SMTP_SERVER=smtp.qq.com #smtp服务器地址，如不输入默认使用QQ邮箱
-SMTP_PORT=465 #SMTP端口，如调整TLS选项需注意一并调整
-SMTP_USERNAME=XXX@qq.com #发信邮箱地址
-SMTP_PASSWORD=XXXXXXXXXXXXXXX #密码或授权码
-SMTP_USE_TLS=False #是否启动TLS，如调整SMTP_PORT选项需注意一并调整
-FROM_EMAIL=XXX@qq.com #发信邮箱地址
-```
+
+> - `DB_TYPE` 决定使用哪种数据库；留空时会按 URI 前缀自动判断。两行 `SQLALCHEMY_DATABASE_URI` 不要同时启用，否则后者会覆盖前者。
+> - `SECRET_KEY` 与 `SECURITY_PASSWORD_SALT` 必须替换为随机字符串；若留空或仍是示例值，启动时会生成临时密钥并告警（重启后登录状态与重置链接全部失效）。
+> - 目标数据库不存在时会尝试自动创建，需要连接账户具备建库权限。
+
+> 关于 soft delete：商品的「删除」与用户的「删除」均为**软删除**（置 `is_deleted` 标记，不物理删除行），
+> 以保全销售流水与操作日志的外键完整性。既有数据库在启动时会自动补上相关字段，无需手工执行 SQL。
+> 被删除的商品与用户可在「回收站」页面查看并还原（仅管理员可见）。
 
 ### 2. 启动项目
 
 ```sh
-python app-mysql.py #使用mysql存储数据
-python app-postgre.py #使用postgre存储数据
+python app.py # 数据库类型由 .env 的 DB_TYPE 决定，无需切换文件
 ```
+
+需要本地热重载时，在 `.env` 中设置 `FLASK_DEBUG=True`（生产环境切勿开启）。
 
 ### 3. 访问地址
 
@@ -119,6 +115,7 @@ python app-postgre.py #使用postgre存储数据
 ├─ models.py
 ├─ utils.py
 ├─ requirements.txt
+├─ .env.sample
 ├─ static/
 │    ├─ uploads/
 │    ├─ favicon.ico
@@ -137,9 +134,19 @@ python app-postgre.py #使用postgre存储数据
 - **图片404？** 请确保 `static/uploads/` 文件夹存在且有写权限。
 - **批量导入出错？** 请确保 CSV 列名和样例一致，编码为 UTF-8。
 - **注册后不能登录？** 管理员审核通过后方可激活。
-- **postgre无法自动创建数据库？** 正在查找问题，目前只能使用psql等工具手动新建数据库并授权。
+- **数据库连接失败？** 确认 `.env` 中 `DB_TYPE` 与实际 URI 前缀一致，且连接账户具备建库权限；数据库不存在时程序会尝试自动创建，失败则退出并打印原因。
+- **忘记管理员密码？** 如果删除或停用了最后一个管理员，可从「回收站」还原管理员账户并在用户管理中启用。
+- **PostgreSQL 报 `UnicodeDecodeError` 或错误消息乱码？** 中文 Windows 的 PostgreSQL 按 GBK（代码页 936）返回本地化错误消息，程序已做兼容解码。若希望所有客户端都干净，可在 `postgresql.conf` 中设置 `lc_messages = 'C'` 后重启服务。
 
 ---
+
+## 测试
+
+```sh
+python tests/run_regression.py
+```
+
+无需数据库服务即可运行（内部使用临时 sqlite 库），覆盖配置解析、既有库自动补列、软删除与导出、权限与限流、回收站还原、CSRF 以及启动失败路径共 60 项断言，退出码非 0 表示有失败项。
 
 ## 许可证
 

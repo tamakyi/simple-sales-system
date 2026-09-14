@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from '_macros.html' import pagination with context %}
 {% block title %}操作日志{% endblock %}
 {% block content %}
 <div class="container">
@@ -72,33 +73,7 @@
     </div>
 
     <!-- 分页导航 -->
-    {% if logs.pages > 1 %}
-    <nav aria-label="Page navigation">
-        <ul class="pagination justify-content-center">
-            {% if logs.has_prev %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('logs', page=logs.prev_num) }}">上一页</a>
-            </li>
-            {% endif %}
-            
-            {% for page_num in logs.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                {% if page_num %}
-                    <li class="page-item {% if page_num == logs.page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('logs', page=page_num) }}">{{ page_num }}</a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled"><span class="page-link">...</span></li>
-                {% endif %}
-            {% endfor %}
-            
-            {% if logs.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="{{ url_for('logs', page=logs.next_num) }}">下一页</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
+    {{ pagination(logs) }}
 </div>
 
 <style>
@@ -147,11 +122,8 @@
         padding: 0.4em 0.6em;
     }
     
-    /* 按钮样式优化 */
-    .btn-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
+    /* 按钮尺寸统一由 style.css 的 .btn / .btn-sm 令牌定义，
+       这里原先把 .btn-sm 覆盖成 14px，与全局 12px 不一致，已移除 */
     
     /* 表格响应式优化 */
     @media (max-width: 768px) {

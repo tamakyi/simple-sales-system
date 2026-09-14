@@ -46,6 +46,7 @@
                 {% if current_user.is_authenticated and current_user.is_admin %}
                 <li class="nav-item"><a class="nav-link" href="/users">用户管理</a></li>
                 <li class="nav-item"><a class="nav-link" href="/logs">操作日志</a></li>
+                <li class="nav-item"><a class="nav-link" href="/recycle-bin">回收站</a></li>
                 {% endif %}
                 <li class="nav-item"><a class="nav-link" href="/export">导出报表</a></li>
             </ul>
@@ -60,8 +61,10 @@
 <div class="container mt-3">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
+        {% set alert_levels = {'error': 'danger', 'danger': 'danger', 'warning': 'warning',
+                               'info': 'info', 'success': 'success'} %}
         {% for category, message in messages %}
-          <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show alert-auto-dismiss" role="alert" data-auto-dismiss="5000">
+          <div class="alert alert-{{ alert_levels.get(category, 'success') }} alert-dismissible fade show alert-auto-dismiss" role="alert" data-auto-dismiss="5000">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
           </div>

@@ -63,7 +63,7 @@
                     <button type="button" class="btn btn-warning btn-sm edit-btn" 
                             data-cat-id="{{ c.id }}">编辑</button>
                     <form action="{{ url_for('delete_category', cat_id=c.id) }}" method="post" 
-                          style="display: inline;" class="delete-form">
+                          class="row-action-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger btn-sm" 
                                 onclick="return confirm('确定删除该分类？')">删除</button>

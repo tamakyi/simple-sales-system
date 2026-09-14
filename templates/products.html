@@ -1,10 +1,17 @@
 {% extends 'base.html' %}
+{% from '_macros.html' import pagination, product_thumb, stock_badge with context %}
 {% block title %}商品管理{% endblock %}
 {% block content %}
 <h3>商品管理</h3>
+{% if low_stock_only %}
+<div class="mb-2">
+    <span class="badge stock-badge stock-low">仅看待补货</span>
+    <a href="{{ url_for('products') }}" class="small ms-1">显示全部</a>
+</div>
+{% endif %}
 <div class="mb-2">
     <form method="get" class="row g-2 align-items-center">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if low_stock_only %}<input type="hidden" name="stock" value="low">{% endif %}
         <div class="col-12 col-md-4">
             <input type="text" name="keyword" class="form-control" placeholder="搜索商品" value="{{ request.args.get('keyword', '') }}">
         </div>
@@ -19,11 +26,11 @@
             </select>
         </div>
         <div class="col-12 col-md-2">
-            <button class="btn btn-outline-primary w-100">搜索</button>
+            <button class="btn btn-primary w-100">搜索</button>
         </div>
         {% if current_user.is_admin %}
         <div class="col-12 col-md-3">
-            <a href="{{ url_for('product_import') }}" class="btn btn-info btn-sm w-100">商品导入</a>
+            <a href="{{ url_for('product_import') }}" class="btn btn-outline-info w-100">商品导入</a>
         </div>
         {% endif %}
     </form>
@@ -32,7 +39,6 @@
 {% if current_user.is_admin %}
 <!-- 批量操作区域 -->
 <div class="batch-actions">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="form-check">
         <input class="form-check-input batch-checkbox" type="checkbox" id="selectAll">
         <label class="form-check-label" for="selectAll">全选</label>
@@ -63,30 +69,20 @@
                 </td>
                 {% endif %}
                 <td data-label="图片" class="text-center">
-                    {% if p.image %}
-                        {% if p.image.startswith('http') %}
-                            <img src="{{ p.image }}" class="product-thumbnail" alt="{{ p.name }}">
-                        {% else %}
-                            <img src="{{ url_for('static', filename=p.image) }}" class="product-thumbnail" alt="{{ p.name }}">
-                        {% endif %}
-                    {% else %}
-                        <div class="no-image-placeholder">
-                            <span>无图片</span>
-                        </div>
-                    {% endif %}
+                    {{ product_thumb(p.image, p.name) }}
                 </td>
                 <td data-label="名称" class="text-center">{{ p.name }}</td>
                 <td data-label="分类" class="mobile-hidden text-center">{{ p.category.name }}</td>
                 <td data-label="单价" class="text-center">{{ p.price }}</td>
-                <td data-label="库存" class="text-center">{{ p.stock }}</td>
+                <td data-label="库存" class="text-center">{{ stock_badge(p) }}</td>
                 {% if current_user.is_admin %}
                 <td data-label="操作" class="table-actions text-center">
                     <a href="{{ url_for('product_edit', pid=p.id) }}" class="btn btn-sm btn-primary">编辑</a>
                     <!-- 修改后 -->
-                    <form action="{{ url_for('delete_product', pid=p.id) }}" method="post" style="display: inline;">
+                    <form action="{{ url_for('delete_product', pid=p.id) }}" method="post" class="row-action-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-danger btn-sm" 
-                                onclick="return confirm('确认删除该商品？')">删除</button>
+                                onclick="return confirm('确认删除该商品？删除后商品将不再显示，但历史销售记录会保留。')">删除</button>
                     </form>
                 </td>
                 {% endif %}
@@ -96,31 +92,7 @@
     </table>
 </div>
 
-<nav aria-label="Page navigation">
-    <ul class="pagination justify-content-center">
-        {% if products.has_prev %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ products.prev_num }}{% if request.args.get('keyword') %}&keyword={{ request.args.get('keyword') }}{% endif %}{% if request.args.get('category_id') %}&category_id={{ request.args.get('category_id') }}{% endif %}">&laquo;</a>
-        </li>
-        {% endif %}
-        
-        {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-            {% if page_num %}
-                <li class="page-item {% if products.page == page_num %}active{% endif %}">
-                    <a class="page-link" href="?page={{ page_num }}{% if request.args.get('keyword') %}&keyword={{ request.args.get('keyword') }}{% endif %}{% if request.args.get('category_id') %}&category_id={{ request.args.get('category_id') }}{% endif %}">{{ page_num }}</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">…</span></li>
-            {% endif %}
-        {% endfor %}
-        
-        {% if products.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ products.next_num }}{% if request.args.get('keyword') %}&keyword={{ request.args.get('keyword') }}{% endif %}{% if request.args.get('category_id') %}&category_id={{ request.args.get('category_id') }}{% endif %}">&raquo;</a>
-        </li>
-        {% endif %}
-    </ul>
-</nav>
+{{ pagination(products) }}
 
 {% if current_user.is_admin %}
 <!-- 批量删除表单 -->
@@ -182,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        if (confirm(`确定要删除这 ${selectedIds.length} 个商品吗？此操作不可恢复。`)) {
+        if (confirm(`确定要删除这 ${selectedIds.length} 个商品吗？删除后不再显示，历史销售记录会保留。`)) {
             productIdsInput.value = selectedIds.join(',');
             document.getElementById('batchDeleteForm').submit();
         }

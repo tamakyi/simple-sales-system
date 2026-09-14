@@ -92,15 +92,91 @@ body {
     min-width: 150px; 
 }
 
-/* 移动端按钮优化 */
-.btn {
-    font-size: 14px;
-    padding: 0.375rem 0.75rem;
+/* ===== 按钮与输入框尺寸：单一来源 =====
+   改前这里有 6 条规则互相覆盖，胜负取决于源码顺序与选择器权重：
+   768px 断点的 .btn{font-size:16px} 写在 .btn-sm 之后、权重相同，
+   把 .btn-sm 的 12px 顶成了 16px——同一个类桌面 16px、移动端 12px。
+   现在改为显式高度 + 两档令牌，不再靠「字号 + 内边距」推算高度。
+
+   档位约定：
+     默认档 .btn     —— 表单提交、页面级操作（搜索/返回/导入）
+     紧凑档 .btn-sm  —— 表格行内操作、工具条（编辑/删除/撤回/批量） */
+:root {
+    --btn-h: 40px;                    /* 默认档高度 */
+    --btn-h-sm: 32px;                 /* 紧凑档高度 */
+    --btn-fs: 14px;
+    --btn-fs-sm: 13px;
+    --btn-px: 14px;
+    --btn-px-sm: 10px;
+    /* 输入框跟随按钮：input-group 内两者必须等高，否则出现台阶 */
+    --field-h: var(--btn-h);
+    --field-h-sm: var(--btn-h-sm);
 }
 
-.btn-sm {
-    padding: 0.25rem 0.5rem;
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--btn-h);
+    padding: 0 var(--btn-px);
+    font-size: var(--btn-fs);
+    line-height: 1.2;
+    touch-action: manipulation;       /* 去掉移动端 300ms 点击延迟 */
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-sm,
+.btn-group-sm > .btn,
+/* Bootstrap 自带 .input-group-sm > .btn{font-size:.875rem}，权重高于 .btn-sm，
+   不加这条，输入框内的按钮会比外面的同样 .btn-sm 大一号 */
+.input-group-sm > .btn {
+    min-height: var(--btn-h-sm);
+    padding: 0 var(--btn-px-sm);
+    font-size: var(--btn-fs-sm);
+}
+
+/* 输入框只在 input-group 内强制与按钮等高；
+   独立表单控件保持 Bootstrap 原高度，避免扩大改动面。 */
+.input-group > .form-control,
+.input-group > .form-select {
+    min-height: var(--field-h);
+}
+
+.input-group-sm > .form-control,
+.input-group-sm > .form-select {
+    min-height: var(--field-h-sm);
+}
+
+/* 移动端：默认档提到 44px 满足触控最小尺寸，紧凑档 40px。
+   令牌改一处，输入框自动跟随，不会出现按钮 44px / 输入框 32px 的错位。 */
+@media (max-width: 767.98px) {
+    :root {
+        --btn-h: 44px;
+        --btn-h-sm: 40px;
+    }
+}
+
+/* 库存徽章。正常库存不加修饰，只有偏低/断货/负库存才上色，
+   否则整张商品表都是彩色块，反而看不出哪一行需要注意。 */
+.stock-badge {
     font-size: 12px;
+    font-weight: 600;
+    min-width: 2.75rem;
+}
+
+.stock-low {
+    background-color: #fd7e14;      /* 橙色：还剩一点，该补货了 */
+    color: #fff;
+}
+
+.stock-out {
+    background-color: #dc3545;      /* 红色：已断货 */
+    color: #fff;
+}
+
+.stock-negative {
+    background-color: #212529;      /* 黑色：库存为负，不是缺货而是数据异常 */
+    color: #fff;
 }
 
 /* 移动端表单优化 */
@@ -129,6 +205,22 @@ body {
 /* 移动端表格操作列优化 */
 .table-actions {
     white-space: nowrap;
+}
+
+/* 行内操作按钮若被 <form> 包着（删除类操作必须 POST），
+   form 必须一起参与后面的 flex 等宽布局，否则「编辑」被拉伸、「删除」保持原宽，同一行两个宽度。 */
+.row-action-form {
+    display: inline;
+}
+
+@media (max-width: 767.98px) {
+    /* 让 <form> 退出布局，里面的 <button> 直接成为 .table-actions 的 flex 子项。
+       只给 form 设 flex:1 是不够的：box-sizing 为 border-box 时，
+       flex-basis:0 的项最小宽度会被自身内边距撑住——按钮有 padding 0 10px（最小 20px）、
+       form 内边距为 0，平分剩余空间后两者仍差 20px，同行「编辑/删除」依旧一大一小。 */
+    .table-actions > .row-action-form {
+        display: contents;
+    }
 }
 
 /* 移动端分页优化 */
@@ -167,10 +259,6 @@ body {
     }
     
     body {
-        font-size: 16px;
-    }
-    
-    .btn {
         font-size: 16px;
     }
 }
@@ -213,32 +301,9 @@ body {
   min-width: 60px;
 }
 
+/* 销售操作表单：尺寸交给 .btn / .btn-sm 令牌，这里只管换行与宽度 */
 .sales-operate-form .btn {
   white-space: nowrap;
-  padding: 0.25rem 0.5rem;
-  font-size: 12px;
-}
-
-/* 移动端优化 */
-@media (max-width: 576px) {
-  .sales-operate-form .input-group {
-    flex-direction: column;
-    min-width: auto;
-  }
-  
-  .sales-operate-form .form-control {
-    max-width: 100%;
-    margin-bottom: 0.25rem;
-  }
-  
-  .sales-operate-form .btn {
-    width: 100%;
-    margin-bottom: 0.25rem;
-  }
-  
-  .sales-operate-form .btn:last-child {
-    margin-bottom: 0;
-  }
 }
 
 /* 日志表格工具提示样式 */
@@ -362,11 +427,10 @@ body {
         justify-content: flex-end;
     }
     
+    /* 行内操作按钮等宽铺满，尺寸仍由 .btn-sm 令牌决定 */
     .table-actions .btn {
         flex: 1;
         min-width: auto;
-        font-size: 12px;
-        padding: 0.25rem 0.5rem;
     }
     
     /* 图片单元格优化 */
@@ -406,24 +470,11 @@ body {
         overflow: visible;
     }
     
-    /* 修复销售页面操作表单 */
+    /* 手机端销售操作表单：[数量][进货][销售] 保持一行。
+       三者高度由 --btn-h-sm 统一为 40px，无需再单独调字号内边距。 */
     .sales-operate-form .input-group {
-        flex-direction: column;
+        flex-wrap: nowrap;
         min-width: auto;
-    }
-    
-    .sales-operate-form .form-control {
-        max-width: 100%;
-        margin-bottom: 0.25rem;
-    }
-    
-    .sales-operate-form .btn {
-        width: 100%;
-        margin-bottom: 0.25rem;
-    }
-    
-    .sales-operate-form .btn:last-child {
-        margin-bottom: 0;
     }
     
     /* 修复分类卡片标题 */
@@ -629,34 +680,31 @@ body {
     text-align: center;
 }
 
+/* 尺寸交给 .btn-sm 令牌，这里只管不换行 */
 .sales-operate-form-simple .btn {
     white-space: nowrap;
-    padding: 0.25rem 0.5rem;
-    font-size: 12px;
 }
 
-/* 手机端优化 */
+/* 手机端优化：数量输入框与两个操作按钮保持一行，
+   三者高度由 --btn-h-sm 统一为 40px，不再各自调字号与内边距。
+   注意：这里原本有两段 max-width:576px 规则互相矛盾（前段改竖排、后段又改回横排），
+   后段覆盖前段，前段大半是死代码，已合并为一份。 */
 @media (max-width: 576px) {
     .product-image-container {
         height: 100px;
     }
     
     .sales-operate-form-simple .input-group {
-        flex-direction: column;
+        flex-wrap: nowrap;
     }
     
     .sales-operate-form-simple .form-control {
-        max-width: 100%;
-        margin-bottom: 0.25rem;
+        max-width: 60px;
         text-align: center;
     }
     
-    .sales-operate-form-simple .btn-group {
-        width: 100%;
-    }
-    
     .sales-operate-form-simple .btn {
-        width: 50%;
+        flex: 1;
     }
     
     /* 确保手机端每行一个商品 */
@@ -697,25 +745,6 @@ body {
     .col-lg-3 {
         flex: 0 0 auto;
         width: 25%;
-    }
-}
-
-/* 确保操作按钮在移动端正确显示 */
-@media (max-width: 576px) {
-    .sales-operate-form-simple .input-group {
-        flex-direction: row;
-        flex-wrap: nowrap;
-    }
-    
-    .sales-operate-form-simple .form-control {
-        max-width: 60px;
-        margin-bottom: 0;
-        margin-right: 0.25rem;
-    }
-    
-    .sales-operate-form-simple .btn {
-        width: auto;
-        flex: 1;
     }
 }
 

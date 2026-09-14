@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from '_macros.html' import pagination with context %}
 {% block title %}
     {% if start_date == end_date and start_date == datetime.date.today() %}
         今日仪表盘
@@ -19,6 +20,29 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 {% endif %}
+<!-- 库存预警。数据来自 dashboard() 的一次条件聚合，不在模板里逐商品判断。 -->
+{% if stock_alert.total %}
+<div class="alert {% if stock_alert.negative %}alert-danger{% else %}alert-warning{% endif %} d-flex flex-wrap align-items-center gap-2 mb-3" role="alert">
+    <strong>库存预警</strong>
+    <span>待补货 {{ stock_alert.total }} 项</span>
+    {% if stock_alert.negative %}
+    <span class="badge stock-badge stock-negative">{{ stock_alert.negative }} 项负库存</span>
+    {% endif %}
+    {% if stock_alert.out %}
+    <span class="badge stock-badge stock-out">{{ stock_alert.out }} 项断货</span>
+    {% endif %}
+    {% if stock_alert.low %}
+    <span class="badge stock-badge stock-low">{{ stock_alert.low }} 项偏低</span>
+    {% endif %}
+    <span class="small">
+        {% for p in low_stock_items -%}
+        {{ p.name }}({{ p.effective_stock }}){% if not loop.last %} · {% endif %}
+        {%- endfor %}
+    </span>
+    <a href="{{ url_for('products', stock='low') }}"
+       class="btn btn-sm ms-auto {% if stock_alert.negative %}btn-danger{% else %}btn-warning{% endif %}">查看待补货</a>
+</div>
+{% endif %}
 <!-- 日期范围选择器 -->
 <div class="row mb-3">
     <div class="col-12">
@@ -26,7 +50,6 @@
             <div class="card-body">
                 <h5 class="card-title">选择日期范围查看销售情况</h5>
                 <form method="get" class="row g-3 align-items-center">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="col-12 col-md-3">
                         <label for="start_date" class="form-label">开始日期</label>
                         <input type="date" id="start_date" name="start_date" class="form-control" 
@@ -40,12 +63,16 @@
                                max="{{ datetime.date.today()|dateformat('%Y-%m-%d') }}">
                     </div>
                     <div class="col-12 col-md-6">
-                        <div class="d-flex gap-2 mt-4">
+                        <div class="d-flex gap-2 mt-4 flex-wrap">
                             <button type="submit" class="btn btn-primary">查询</button>
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-info">今天</a>
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">今天</a>
                             <button type="button" class="btn btn-outline-secondary" id="yesterdayBtn">昨天</button>
                             <button type="button" class="btn btn-outline-secondary" id="last7daysBtn">最近7天</button>
                             <button type="button" class="btn btn-outline-secondary" id="last30daysBtn">最近30天</button>
+                            {% if current_user.is_admin %}
+                            <a href="{{ url_for('export', start_date=start_date|dateformat('%Y-%m-%d'), end_date=end_date|dateformat('%Y-%m-%d')) }}"
+                               class="btn btn-outline-success">导出本区间</a>
+                            {% endif %}
                         </div>
                     </div>
                 </form>
@@ -150,7 +177,7 @@
         <h5 class="card-title">
             {% if start_date == end_date %}
                 {% if start_date == datetime.date.today() %}
-                    今日最近20条销售流水
+                    今日销售流水
                 {% else %}
                     {{ start_date|dateformat('%Y-%m-%d') }}销售流水
                 {% endif %}
@@ -169,9 +196,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for s in sales %}
+                    {% for s in sales.items %}
                     <tr>
-                        <td data-label="商品">{{ s.product.name }}</td>
+                        <td data-label="商品">{{ s.product.name if s.product else '(已删除商品)' }}</td>
                         <td data-label="数量">{{ s.quantity }}</td>
                         <td class="mobile-hidden" data-label="金额">{{ s.amount|round(2) }}</td>
                         <td data-label="时间">{{ s.created_at.strftime('%m-%d %H:%M') }}</td>
@@ -180,6 +207,8 @@
                 </tbody>
             </table>
         </div>
+
+        {{ pagination(sales) }}
     </div>
 </div>
 

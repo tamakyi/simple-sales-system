@@ -26,10 +26,10 @@
                     
                     {# 删除按钮 - 使用表单提交POST请求 #}
                     {% if u.id != current_user.id %}
-                    <form action="{{ url_for('delete_user', uid=u.id) }}" method="post" style="display: inline;">
+                    <form action="{{ url_for('delete_user', uid=u.id) }}" method="post" class="row-action-form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-danger" 
-                                onclick="return confirm('确定要删除用户 {{ u.username }} 吗？此操作不可恢复。')">
+                                onclick="return confirm('确定要删除用户 {{ u.username }} 吗？删除后该账户将无法登录，其历史操作记录仍会保留。')">
                             删除
                         </button>
                     </form>

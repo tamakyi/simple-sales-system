@@ -18,6 +18,7 @@
                 </div>
                 
                 <form id="testEmailForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
                         <label for="email" class="form-label">测试邮箱地址</label>
                         <input type="email" class="form-control" id="email" name="email" required 
@@ -45,7 +46,9 @@ document.getElementById('testEmailForm').addEventListener('submit', function(e) 
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => response.json().catch(function() {
+        return { success: false, message: '请求被拒绝（CSRF 校验失败或登录已过期）' };
+    }))
     .then(data => {
         if (data.success) {
             resultDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';

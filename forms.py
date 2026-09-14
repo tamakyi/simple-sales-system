@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, FloatField, SelectField, FileField, BooleanField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, EqualTo, Email
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, DecimalField, SelectField, FileField, BooleanField
+from wtforms.validators import DataRequired, InputRequired, Length, NumberRange, Optional, EqualTo, Email
 from flask_wtf.file import FileAllowed
 
 class LoginForm(FlaskForm):
@@ -11,7 +11,7 @@ class LoginForm(FlaskForm):
 
 class RegisterForm(FlaskForm):
     username = StringField('用户名', validators=[DataRequired(), Length(min=3)])
-    password = PasswordField('密码', validators=[DataRequired(), Length(min=3)])
+    password = PasswordField('密码', validators=[DataRequired(), Length(min=6, message='密码长度至少为6位')])
     email = StringField('邮箱', validators=[DataRequired(), Email()])
     captcha = StringField('验证码', validators=[DataRequired(), Length(5, 5, message='验证码必须为5位')])
     submit = SubmitField('注册')
@@ -31,8 +31,11 @@ class ResetPasswordForm(FlaskForm):
 
 class ProductForm(FlaskForm):
     name = StringField('商品名', validators=[DataRequired()])
-    price = FloatField('单价', validators=[DataRequired(), NumberRange(min=0)])
-    stock = IntegerField('库存', validators=[DataRequired(), NumberRange(min=0)])
+    # 数值字段用 InputRequired：DataRequired 会把 0 当作「未填写」而拒绝整个提交，
+    # 于是库存为 0 的商品连改价都改不了。下界交给 NumberRange。
+    price = DecimalField('单价', places=2, validators=[InputRequired(), NumberRange(min=0)])
+    stock = IntegerField('库存', validators=[InputRequired(), NumberRange(min=0)])
+    low_stock_threshold = IntegerField('库存预警阈值', validators=[Optional(), NumberRange(min=0)])
     category = SelectField('分类', coerce=int)
     image_link = StringField('图片链接', validators=[Optional()])
     image = FileField('或上传图片', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg', 'webp'])])
@@ -40,8 +43,9 @@ class ProductForm(FlaskForm):
 
 class ManualProductForm(FlaskForm):
     name = StringField('商品名', validators=[DataRequired()])
-    price = FloatField('单价', validators=[DataRequired(), NumberRange(min=0)])
-    stock = IntegerField('库存', validators=[DataRequired(), NumberRange(min=0)])
+    price = DecimalField('单价', places=2, validators=[InputRequired(), NumberRange(min=0)])
+    stock = IntegerField('库存', validators=[InputRequired(), NumberRange(min=0)])
+    low_stock_threshold = IntegerField('库存预警阈值', validators=[Optional(), NumberRange(min=0)])
     category = SelectField('分类', coerce=int)
     image_link = StringField('图片链接', validators=[Optional()])
     image = FileField('或上传图片', validators=[Optional(), FileAllowed(['jpg', 'png', 'jpeg', 'webp'])])
@@ -50,17 +54,6 @@ class ManualProductForm(FlaskForm):
 class ProductImportForm(FlaskForm):
     file = FileField('CSV文件', validators=[DataRequired(), FileAllowed(['csv'])])
     submit = SubmitField('批量导入')
-
-class SaleOneForm(FlaskForm):
-    quantity = IntegerField('数量', validators=[DataRequired(), NumberRange(min=1)])
-    submit_in = SubmitField('进货')
-    submit_out = SubmitField('销售')
-
-class SaleForm(FlaskForm):
-    product = SelectField('商品', coerce=int)
-    quantity = IntegerField('数量', validators=[DataRequired(), NumberRange(min=1)])
-    type = SelectField('类型', choices=[('in', '进货'), ('out', '销售')])
-    submit = SubmitField('提交')
 
 class CategoryForm(FlaskForm):
     name = StringField('分类名', validators=[DataRequired()])
@@ -83,8 +76,4 @@ class UserApproveForm(FlaskForm):
         EqualTo('new_password', message='两次输入的密码不一致')
     ])
     
-    submit = SubmitField('保存')
-
-class CategoryEditForm(FlaskForm):
-    name = StringField('分类名', validators=[DataRequired()])
     submit = SubmitField('保存')
